@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Laboratoire pédagogique de sciences et technologies : simulateurs interactifs pour le BTS Métiers de l'Eau et la STI2D SIN.">
+<title>Laboratoire pédagogique – Sciences & Technologies</title>
+<style>
+:root{--bg:#0b1220;--panel:#121e30;--panel2:#17263a;--text:#edf4fb;--muted:#a9b8ca;--accent:#55c2b2;--line:#2a3b50}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(ellipse at 80% 0%,#17354a 0,transparent 38%),var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+header{padding:64px 22px 48px;border-bottom:1px solid var(--line)} .wrap{max-width:1100px;margin:auto}
+.eyebrow{color:var(--accent);font-weight:700;letter-spacing:.13em;font-size:.78rem;text-transform:uppercase}
+h1{font-size:clamp(2.2rem,5vw,4rem);line-height:1.08;max-width:800px;margin:14px 0}
+.lead{color:var(--muted);max-width:720px;font-size:1.12rem}
+main{padding:42px 22px 70px} .section-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:0 0 18px}
+h2{font-size:1.5rem;margin:0} .section-head p{color:var(--muted);margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-bottom:42px}
+.card{display:block;text-decoration:none;color:inherit;background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:24px;min-height:220px;transition:.18s}
+.card.active:hover{transform:translateY(-3px);border-color:var(--accent)}
+.tag{font-size:.72rem;letter-spacing:.1em;color:var(--accent);font-weight:800}
+h3{font-size:1.22rem;line-height:1.3;margin:12px 0} .card p{color:var(--muted);margin:0 0 18px}
+.launch{color:var(--accent);font-weight:700} .soon{display:inline-block;color:#c6d0dd;border:1px solid #46566a;border-radius:20px;padding:3px 10px;font-size:.75rem}
+footer{border-top:1px solid var(--line);padding:22px;color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<div class="eyebrow">Espace de simulation et d'expérimentation</div>
+<h1>Laboratoire pédagogique<br>Sciences & Technologies</h1>
+<p class="lead">Des simulateurs interactifs pour comprendre, tester des paramètres et relier les notions théoriques aux situations techniques.</p>
+</div></header>
+<main class="wrap">
+<div class="section-head"><div><h2>BTS Métiers de l'Eau</h2><p>Procédés, hydraulique et exploitation des installations.</p></div></div>
+<div class="grid">
+
+      <a class="card active" href="bts-metiers-eau/pompage/">
+        <span class="tag">BTS MÉTIERS DE L'EAU</span>
+        <h3>Dimensionnement d'une installation de pompage</h3>
+        <p>Débit, HMT, pertes de charge, courbes pompe et réseau, variation de vitesse.</p>
+        <span class="launch">Lancer le simulateur →</span>
+      </a>
+<div class="card"><span class="tag">BTS MÉTIERS DE L'EAU</span><h3>Dimensionnement d'un dégrilleur</h3><p>Étude de la grille, ouverture, colmatage et fonctionnement du raclage.</p><span class="soon">Prochainement</span></div>
+<div class="card"><span class="tag">BTS MÉTIERS DE L'EAU</span><h3>Croissance bactérienne – E. coli</h3><p>Influence de la température, du pH et de l'oxygène sur la croissance.</p><span class="soon">Prochainement</span></div>
+</div>
+<div class="section-head"><div><h2>STI2D – spécialité SIN</h2><p>Systèmes communicants, programmation et réseaux.</p></div></div>
+<div class="grid">
+<div class="card"><span class="tag">STI2D SIN</span><h3>Décodage d'une trame I²C</h3><p>Visualiser START, adresse, lecture/écriture, ACK/NACK et STOP.</p><span class="soon">Prochainement</span></div>
+<div class="card"><span class="tag">STI2D SIN</span><h3>Simulateur réseau</h3><p>Adresses IP, masques CIDR, passerelles et échanges entre protocoles.</p><span class="soon">Prochainement</span></div>
+<div class="card"><span class="tag">STI2D SIN</span><h3>Constructeur de programmes Arduino</h3><p>Composer un programme à partir des modules matériels sélectionnés.</p><span class="soon">Prochainement</span></div>
+</div>
+</main>
+<footer><div class="wrap">Laboratoire pédagogique – Sciences & Technologies · Ressources interactives à destination des élèves et étudiants.</div></footer>
+</body></html>
