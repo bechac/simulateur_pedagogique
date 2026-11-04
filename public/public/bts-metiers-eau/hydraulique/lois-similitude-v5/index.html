@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratoire hydraulique – Lois de similitude</title>
+<style>
+:root{--navy:#14283f;--blue:#1677c8;--cyan:#39b9d5;--orange:#ef8d32;--green:#23966b;--red:#d94b4b;--bg:#f2f5f8;--card:#fff;--muted:#64748b;--line:#dce4ec}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#1e293b;font:15px/1.45 Inter,Segoe UI,Arial,sans-serif}
+header{background:linear-gradient(120deg,#14283f,#20547a);color:white;padding:23px clamp(16px,4vw,48px)}
+header .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#a9d9ef;font-weight:700}
+h1{margin:5px 0 4px;font-size:clamp(23px,3vw,34px)}header p{margin:0;color:#d8e8f3}
+main{max-width:1440px;margin:auto;padding:22px clamp(12px,2.5vw,32px) 40px}
+.layout{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:17px;box-shadow:0 3px 12px #17324d0a}
+.card h2{font-size:17px;margin:0 0 13px;color:var(--navy)}
+.card h3{font-size:14px;margin:17px 0 8px;color:#334155}
+.field{margin:10px 0}.field label{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:#475569;margin-bottom:5px}
+.field input{width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:9px 10px;font:inherit;background:#fff;color:#0f172a}
+.field input:focus{outline:2px solid #93c5fd;border-color:var(--blue)}
+.unit{color:#64748b;font-size:12px}
+.smallnote{font-size:12px;color:var(--muted);margin:8px 0}
+.range-wrap{display:flex;align-items:center;gap:10px}.range-wrap input{padding:0;accent-color:var(--blue)}
+.range-wrap output{min-width:80px;text-align:right;font-weight:700;color:var(--blue);font-variant-numeric:tabular-nums}
+button{border:0;border-radius:8px;padding:9px 12px;background:#e8f2fb;color:#15598b;font-weight:650;cursor:pointer}
+button:hover{filter:brightness(.97)}button.primary{background:var(--blue);color:white}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.content{display:grid;gap:18px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.metric{background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px}
+.metric .k{font-size:12px;color:var(--muted)}.metric .v{font-size:23px;font-weight:750;color:var(--navy);margin-top:3px;font-variant-numeric:tabular-nums}.metric .u{font-size:11px;color:#64748b}
+.chartbox{position:relative;width:100%;height:390px}canvas{width:100%;height:100%;display:block}
+.legend{display:flex;gap:15px;flex-wrap:wrap;font-size:12px;color:#475569;margin-top:8px}
+.key{display:inline-block;width:20px;height:3px;vertical-align:middle;margin-right:5px;background:var(--blue)}.key.network{background:var(--orange)}.key.other{background:#94a3b8}
+.lower{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+.animation{min-height:245px;background:linear-gradient(180deg,#f7fbfe,#edf5fa);border-radius:10px;position:relative;overflow:hidden;padding:12px}
+.animation svg{width:100%;height:210px;display:block}
+.rotor{transform-box:view-box;transform-origin:230px 105px;animation:spin 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pipeflow{stroke-dasharray:10 12;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-44}}
+.anim-caption{font-size:12px;color:#526579;display:flex;justify-content:space-between;gap:10px}
+.formula{background:#f7fafc;border:1px solid var(--line);padding:10px 12px;border-radius:8px;font-family:Cambria,Georgia,serif;font-size:17px;text-align:center;margin:8px 0}
+.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px 8px;border-bottom:1px solid #e5eaf0;text-align:right;white-space:nowrap}th{background:#f4f7fa;color:#475569}th:first-child,td:first-child{text-align:left}
+.status{padding:10px 12px;border-radius:8px;background:#eef8f3;color:#176b4c;font-size:13px;margin-top:10px}
+.status.warn{background:#fff5e9;color:#9a5b12}
+details summary{cursor:pointer;font-weight:650;color:#334155}
+footer{text-align:center;color:#8290a0;font-size:11px;margin-top:22px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.lower{grid-template-columns:1fr}}
+@media(max-width:520px){.chartbox{height:310px}.metric .v{font-size:20px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="eyebrow">Simulateur pédagogique • Hydraulique</div>
+ <h1>Lois de similitude des pompes</h1>
+ <p>Influence de la vitesse de rotation sur la courbe caractéristique et le point de fonctionnement</p>
+</header>
+<main>
+<div class="layout">
+ <aside class="card">
+  <h2>1. Paramètres du réseau</h2>
+  <div class="field"><label>Hauteur géométrique ΔH <span class="unit">m</span></label><input id="dh" type="number" min="0" step=".1" value="5"></div>
+  <div class="field"><label>Diamètre intérieur D <span class="unit">mm</span></label><input id="diam" type="number" min="20" step="1" value="100"></div>
+  <div class="field"><label>Longueur droite L<sub>D</sub> <span class="unit">m</span></label><input id="ld" type="number" min="0" step="1" value="30"></div>
+  <div class="field"><label>Longueur équivalente L<sub>s</sub> <span class="unit">m</span></label><input id="ls" type="number" min="0" step="1" value="20"></div>
+  <div class="field"><label>Coefficient de frottement λ <span class="unit">sans unité</span></label><input id="lambda" type="number" min=".001" max="1" step=".001" value=".02"></div>
+  <div class="field"><label>Rugosité absolue k <span class="unit">mm</span></label><input id="rough" type="number" min="0" step=".01" value=".1"></div>
+  <p class="smallnote">La rugosité est informative : λ est ici saisi directement, comme dans l'étude. Le simulateur ne recalcule pas λ avec Colebrook/Moody.</p>
+  <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+  <h2>2. Pompe</h2>
+  <div class="field"><label>Vitesse de référence N₁ <span class="unit">tr/min</span></label><input id="baseSpeed" type="number" min="1" step="1" value="1450"></div>
+  <div class="field"><label>Vitesse étudiée N₂ <span class="unit">tr/min</span></label><input id="speedNumber" type="number" min="1" step="1" value="1450"></div>
+  <div class="field"><label>Réglage visuel de N₂</label>
+   <div class="range-wrap"><input id="speed" type="range" min="100" max="3000" step="10" value="1450"><output id="speedOut">1450 tr/min</output></div>
+   <p class="smallnote">Le curseur et le champ numérique sont synchronisés. Tu peux saisir directement les vitesses N₁ et N₂.</p>
+  </div>
+  <div class="field"><label>Diamètre de roue <span class="unit">mm</span></label><input id="wheel" type="number" min="50" step="1" value="213"></div>
+  <div class="field"><label>Débit maximal affiché <span class="unit">m³/s</span></label><input id="qmax" type="number" min=".005" step=".001" value=".03"></div>
+  <div class="actions"><button class="primary" id="reset">Réinitialiser l'exercice</button><button id="toggleCurves">Masquer courbes comparatives</button></div>
+  <p class="smallnote">Les courbes à d'autres vitesses sont obtenues par similitude à partir de la courbe de référence.</p>
+ </aside>
+ <section class="content">
+  <div class="metrics">
+   <div class="metric"><div class="k">Débit au point de fonctionnement</div><div class="v" id="qMetric">0,0215</div><div class="u">m³/s</div></div>
+   <div class="metric"><div class="k">Débit horaire</div><div class="v" id="qhMetric">77,4</div><div class="u">m³/h</div></div>
+   <div class="metric"><div class="k">Hauteur manométrique</div><div class="v" id="hMetric">9,2</div><div class="u">m</div></div>
+   <div class="metric"><div class="k">Vitesse relative</div><div class="v" id="ratioMetric">100</div><div class="u">% de la vitesse de référence</div></div>
+  </div>
+  <div class="card">
+   <h2>3. Courbes caractéristiques et point de fonctionnement</h2>
+   <div class="chartbox"><canvas id="chart"></canvas></div>
+   <div class="legend">
+    <span><i class="key"></i>Pompe à la vitesse sélectionnée</span>
+    <span><i class="key network"></i>Courbe du réseau</span>
+    <span><i class="key other"></i>Autres vitesses (1150 / 1300 / 1450 tr/min)</span>
+   </div>
+   <div id="status" class="status">Point de fonctionnement calculé à l'intersection des courbes.</div>
+  </div>
+  <div class="lower">
+   <div class="card">
+    <h2>4. Animation de la pompe</h2>
+    <div class="animation">
+     <svg viewBox="0 0 520 220" role="img" aria-label="Animation schématique d'une pompe centrifuge">
+      <defs>
+       <linearGradient id="water" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#9de4f3"/><stop offset="1" stop-color="#299cc8"/></linearGradient>
+      </defs>
+      <path d="M15 145 H115 Q130 145 130 130 V105 H195" fill="none" stroke="#9aaaba" stroke-width="25" stroke-linejoin="round"/>
+      <path d="M15 145 H115 Q130 145 130 130 V105 H195" fill="none" stroke="url(#water)" stroke-width="17" stroke-linejoin="round"/>
+      <path class="pipeflow" d="M18 145 H115 Q130 145 130 130 V105 H195" fill="none" stroke="#e8fbff" stroke-width="3"/>
+      <path d="M270 105 H375 V60 H505" fill="none" stroke="#9aaaba" stroke-width="25" stroke-linejoin="round"/>
+      <path d="M270 105 H375 V60 H505" fill="none" stroke="url(#water)" stroke-width="17" stroke-linejoin="round"/>
+      <path class="pipeflow" d="M270 105 H375 V60 H505" fill="none" stroke="#e8fbff" stroke-width="3"/>
+      <circle cx="230" cy="105" r="54" fill="#d5e0e8" stroke="#49677f" stroke-width="5"/>
+      <circle cx="230" cy="105" r="47" fill="#9fb2c1" stroke="#6f8799" stroke-width="2"/>
+      <g class="rotor" id="rotor">
+       <circle cx="230" cy="105" r="42" fill="#c7d5df" stroke="#627d91" stroke-width="2"/>
+       <g fill="#287eae" stroke="#14577f" stroke-width="1.8" stroke-linejoin="round">
+        <path d="M235 99 C242 87 250 76 265 72 C274 70 281 76 278 84 C273 96 258 103 241 109 C237 106 235 103 235 99Z"/>
+        <path d="M235 99 C242 87 250 76 265 72 C274 70 281 76 278 84 C273 96 258 103 241 109 C237 106 235 103 235 99Z" transform="rotate(60 230 105)"/>
+        <path d="M235 99 C242 87 250 76 265 72 C274 70 281 76 278 84 C273 96 258 103 241 109 C237 106 235 103 235 99Z" transform="rotate(120 230 105)"/>
+        <path d="M235 99 C242 87 250 76 265 72 C274 70 281 76 278 84 C273 96 258 103 241 109 C237 106 235 103 235 99Z" transform="rotate(180 230 105)"/>
+        <path d="M235 99 C242 87 250 76 265 72 C274 70 281 76 278 84 C273 96 258 103 241 109 C237 106 235 103 235 99Z" transform="rotate(240 230 105)"/>
+        <path d="M235 99 C242 87 250 76 265 72 C274 70 281 76 278 84 C273 96 258 103 241 109 C237 106 235 103 235 99Z" transform="rotate(300 230 105)"/>
+       </g>
+       <circle cx="230" cy="105" r="13" fill="#e4edf3" stroke="#4f6d82" stroke-width="2"/>
+       <circle cx="230" cy="105" r="5" fill="#526f84"/>
+      </g>
+      <circle cx="230" cy="105" r="55" fill="none" stroke="#49677f" stroke-width="3"/>
+      <text x="230" y="184" text-anchor="middle" font-size="12" fill="#36536a">Roue de pompe</text>
+      <text x="22" y="178" font-size="11" fill="#36536a">Aspiration</text>
+      <text x="415" y="35" font-size="11" fill="#36536a">Refoulement</text>
+      <text x="405" y="85" font-size="11" fill="#36536a" id="flowSvg">Débit : --</text>
+     </svg>
+     <div class="anim-caption"><span id="animSpeed">Rotation : 1450 tr/min</span><span id="animFlow">Débit : 77,4 m³/h</span></div>
+    </div>
+    <p class="smallnote">La rotation de la roue est une représentation schématique. Sa vitesse visuelle suit la consigne de rotation.</p>
+   </div>
+   <div class="card">
+    <h2>5. Rappel des lois</h2>
+    <div class="formula">Q₂ = Q₁ × (N₂ / N₁)</div>
+    <div class="formula">H₂ = H₁ × (N₂ / N₁)²</div>
+    <div class="formula" id="networkFormula">H<sub>r</sub> = 5 + 9089 Q²</div>
+    <p class="smallnote">Le débit Q est exprimé en m³/s et la hauteur H en mètres. Le point de fonctionnement est déterminé numériquement par recherche de l'intersection.</p>
+    <div id="coefficient" style="font-size:13px;color:#475569"></div>
+   </div>
+  </div>
+  <div class="card">
+   <h2>6. Courbe de pompe de référence – données modifiables</h2>
+   <p class="smallnote">Saisis les points de la courbe constructeur à la vitesse de référence N₁. Chaque modification actualise les courbes et le point de fonctionnement. Les débits doivent être uniques et croissants ; le tri est automatique lorsque tu quittes un champ.</p>
+   <div class="tablewrap">
+    <table id="dataTable">
+     <thead><tr><th>Point</th><th>Débit Q (m³/s)</th><th>Hauteur H (m)</th><th>Action</th></tr></thead>
+     <tbody></tbody>
+    </table>
+   </div>
+   <div class="actions">
+    <button class="primary" id="addPoint">＋ Ajouter un point</button>
+    <button id="resetCurve">Recharger la courbe de l'exercice</button>
+   </div>
+   <div id="curveMessage" class="smallnote" aria-live="polite">Courbe de référence prête à être modifiée.</div>
+  </div>
+  <div class="card" id="energyCard">
+   <h2>7. Bilan énergétique et coût de fonctionnement</h2>
+   <p class="smallnote">Compare le coût estimé de fonctionnement aux vitesses N₁, N₂ et N₃ sur le même réseau. La puissance électrique est estimée à partir de la puissance hydraulique et du rendement global pompe + moteur.</p>
+   <div class="lower">
+    <div>
+     <h3>Paramètres économiques et d'utilisation</h3>
+     <div class="field"><label>Prix de l'électricité <span class="unit">€/kWh</span></label><input id="energyPrice" type="number" min="0" step="0.001" value="0.20"></div>
+     <div class="field"><label>Temps de fonctionnement <span class="unit">h/jour</span></label><input id="hoursDay" type="number" min="0" max="24" step="0.5" value="12"></div>
+     <div class="field"><label>Nombre de jours de fonctionnement <span class="unit">jours/an</span></label><input id="daysYear" type="number" min="0" max="366" step="1" value="365"></div>
+     <div class="field"><label>Rendement global pompe + moteur <span class="unit">%</span></label><input id="efficiency" type="number" min="1" max="100" step="1" value="65"></div>
+     <div class="field"><label>Vitesse N₃ <span class="unit">tr/min</span></label><input id="speed3" type="number" min="1" step="1" value="1150"></div>
+     <p class="smallnote">Le rendement global est à renseigner à partir des données constructeur ou d'une hypothèse pédagogique. Il est supposé identique pour les trois vitesses.</p>
+    </div>
+    <div>
+     <h3>Résultats comparatifs</h3>
+     <div class="tablewrap">
+      <table id="energyTable">
+       <thead><tr><th>Vitesse</th><th>Débit (m³/h)</th><th>H (m)</th><th>P électrique (kW)</th><th>Énergie (kWh/an)</th><th>Coût (€/an)</th></tr></thead>
+       <tbody></tbody>
+      </table>
+     </div>
+     <div id="energySummary" class="status">Renseigne les paramètres pour calculer les coûts.</div>
+    </div>
+   </div>
+   <div class="formula">P<sub>hyd</sub> = ρ × g × Q × H &nbsp;&nbsp; ; &nbsp;&nbsp; P<sub>élec</sub> = P<sub>hyd</sub> / η</div>
+   <p class="smallnote">Hypothèses : eau de masse volumique 1 000 kg/m³, g = 9,81 m/s², fonctionnement à débit et hauteur constants au point de fonctionnement. Le coût calculé est une estimation hors abonnement, taxes spécifiques éventuelles et coûts de maintenance.</p>
+  </div>
+ </section>
+</div>
+<footer>Modèle pédagogique simplifié — les résultats dépendent des points de la courbe constructeur et des hypothèses de calcul du réseau.</footer>
+</main>
+<script>
+let baseCurve=[
+ [0,15.9],[.004,15.7],[.008,15.3],[.012,14.4],[.016,12.9],[.020,10.6],[.024,7.0]
+];
+const exerciseCurve=baseCurve.map(p=>[...p]);
+const $=id=>document.getElementById(id);
+let showComparisons=true, current={q:0,h:0,valid:false}, animationFrame=null;
+const fmt=(v,d=2)=>Number.isFinite(v)?v.toFixed(d).replace('.',','):'—';
+function val(id){return Number($(id).value)}
+function networkParams(){
+ const D=val('diam')/1000,L=val('ld')+val('ls'),lam=val('lambda'),dh=val('dh');
+ if(!(D>0&&L>=0&&lam>=0&&dh>=0)) return null;
+ const K=8/(Math.PI**2*Math.pow(D,4)*9.81)*(1+lam*L/D);
+ return {D,L,lam,dh,K};
+}
+function pumpAt(q,N){
+ if(baseCurve.length<2||!baseCurve.every(([a,b])=>Number.isFinite(a)&&Number.isFinite(b))||!baseCurve.every((pt,i)=>i===0||pt[0]>baseCurve[i-1][0]))return null;
+ const n=N/val('baseSpeed');
+ const qBase=q/n;
+ if(qBase<baseCurve[0][0]||qBase>baseCurve[baseCurve.length-1][0])return null;
+ let i=0;while(i<baseCurve.length-2&&baseCurve[i+1][0]<qBase)i++;
+ const [q1,h1]=baseCurve[i],[q2,h2]=baseCurve[i+1];
+ const h=h1+(h2-h1)*(qBase-q1)/(q2-q1);
+ return h*n*n;
+}
+function solveAtSpeed(N){
+ const p=networkParams(),N1=val('baseSpeed');
+ if(!p||!(N>0&&N1>0))return {valid:false};
+ const qmax=Math.max(val('qmax'),.005),steps=3000;let prev=null,found=null;
+ for(let i=0;i<=steps;i++){
+  const q=qmax*i/steps, hp=pumpAt(q,N);
+  if(hp===null)continue;
+  const hr=p.dh+p.K*q*q, diff=hp-hr;
+  if(prev&&prev.diff>=0&&diff<=0){
+   const t=prev.diff/(prev.diff-diff);
+   const qf=prev.q+t*(q-prev.q);
+   found={q:qf,h:p.dh+p.K*qf*qf,valid:true};
+  }
+  prev={q,diff};
+ }
+ return found||{valid:false,p};
+}
+function update(){
+ $('speedOut').textContent=val('speedNumber')+' tr/min';
+ $('speed').value=Math.min(Number($('speed').max),Math.max(Number($('speed').min),val('speedNumber')||Number($('speed').min)));
+ const p=networkParams(),N=val('speedNumber'),N1=val('baseSpeed');
+ if(!p||!(N>0&&N1>0)){ $('status').className='status warn';$('status').textContent='Vérifier les paramètres : diamètre, vitesse et coefficient de frottement.';draw();return;}
+ current=solveAtSpeed(N);
+ const q=current.valid?current.q:0,h=current.valid?current.h:0;
+ $('qMetric').textContent=current.valid?fmt(q,4):'—';
+ $('qhMetric').textContent=current.valid?fmt(q*3600,1):'—';
+ $('hMetric').textContent=current.valid?fmt(h,2):'—';
+ $('ratioMetric').textContent=fmt(N/N1*100,1);
+ $('animSpeed').textContent='Rotation : '+N+' tr/min';
+ $('animFlow').textContent='Débit : '+(current.valid?fmt(q*3600,1)+' m³/h':'aucun point');
+ $('flowSvg').textContent='Débit : '+(current.valid?fmt(q*3600,1)+' m³/h':'—');
+ $('rotor').style.animationDuration=(Math.max(.25,1.2*1450/N)).toFixed(2)+'s';
+ $('networkFormula').innerHTML='H<sub>r</sub> = '+fmt(p.dh,2)+' + '+fmt(p.K,0)+' Q²';
+ $('coefficient').textContent='Coefficient du réseau Kᵣ = '+fmt(p.K,1)+' s²/m⁵ • Longueur totale = '+fmt(p.L,1)+' m';
+ if(current.valid){$('status').className='status';$('status').textContent='Intersection trouvée : Q = '+fmt(q,4)+' m³/s, soit '+fmt(q*3600,1)+' m³/h ; H = '+fmt(h,2)+' m.';}
+ else{$('status').className='status warn';$('status').textContent='Aucun point d’intersection dans la plage affichée. Augmenter le débit maximal ou vérifier la vitesse et les paramètres.';}
+ draw();
+ updateEnergy();
+}
+function draw(){
+ const canvas=$('chart'),rect=canvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+ canvas.width=Math.max(1,Math.round(rect.width*dpr));canvas.height=Math.max(1,Math.round(rect.height*dpr));
+ const c=canvas.getContext('2d');c.scale(dpr,dpr);
+ const W=rect.width,H=rect.height,L=58,R=18,T=18,B=45,p=networkParams();
+ const qMax=Math.max(val('qmax')||.03,.005),hMax=20;
+ const X=q=>L+q/qMax*(W-L-R),Y=h=>T+(hMax-h)/hMax*(H-T-B);
+ c.clearRect(0,0,W,H);c.fillStyle='#fff';c.fillRect(0,0,W,H);
+ c.font='11px Segoe UI';c.strokeStyle='#e5ebf0';c.lineWidth=1;
+ for(let i=0;i<=6;i++){let q=qMax*i/6,x=X(q);c.beginPath();c.moveTo(x,T);c.lineTo(x,H-B);c.stroke();c.fillStyle='#64748b';c.textAlign='center';c.fillText(q.toFixed(3).replace('.',','),x,H-B+18);}
+ for(let h=0;h<=hMax;h+=2){let y=Y(h);c.beginPath();c.moveTo(L,y);c.lineTo(W-R,y);c.stroke();c.fillStyle='#64748b';c.textAlign='right';c.fillText(h,L-9,y+4);}
+ c.strokeStyle='#64748b';c.lineWidth=1.2;c.beginPath();c.moveTo(L,T);c.lineTo(L,H-B);c.lineTo(W-R,H-B);c.stroke();
+ c.fillStyle='#334155';c.textAlign='center';c.font='12px Segoe UI';c.fillText('Débit Q (m³/s)',(L+W-R)/2,H-7);
+ c.save();c.translate(15,(T+H-B)/2);c.rotate(-Math.PI/2);c.fillText('Hauteur H (m)',0,0);c.restore();
+ function line(points,color,width=2.5,dash=[]){c.beginPath();let started=false;for(const pt of points){if(pt[1]===null||!Number.isFinite(pt[1])){started=false;continue;}if(!started){c.moveTo(X(pt[0]),Y(pt[1]));started=true;}else c.lineTo(X(pt[0]),Y(pt[1]));}c.strokeStyle=color;c.lineWidth=width;c.setLineDash(dash);c.stroke();c.setLineDash([]);}
+ if(showComparisons){
+  [1150,1300,1450].forEach((n,i)=>{const pts=[];for(let j=0;j<=200;j++){let q=qMax*j/200;pts.push([q,pumpAt(q,n)]);}line(pts,['#a6b2bf','#8594a5','#64748b'][i],1.5,[5,4]);});
+ }
+ const N=val('speedNumber'),pump=[];for(let j=0;j<=240;j++){let q=qMax*j/240;pump.push([q,pumpAt(q,N)]);}line(pump,'#1677c8',3);
+ if(p){const net=[];for(let j=0;j<=200;j++){let q=qMax*j/200;net.push([q,p.dh+p.K*q*q]);}line(net,'#ef8d32',3);}
+ if(current.valid){c.beginPath();c.arc(X(current.q),Y(current.h),6,0,Math.PI*2);c.fillStyle='#d94b4b';c.fill();c.strokeStyle='#fff';c.lineWidth=2;c.stroke();c.fillStyle='#9b3030';c.font='bold 12px Segoe UI';c.textAlign='left';c.fillText('PF',X(current.q)+10,Y(current.h)-9);}
+}
+function updateEnergy(){
+ const price=Number($('energyPrice').value),hours=Number($('hoursDay').value),days=Number($('daysYear').value),eta=Number($('efficiency').value)/100;
+ const speeds=[['N₁',val('baseSpeed')],['N₂',val('speedNumber')],['N₃',val('speed3')]];
+ const tb=$('energyTable').querySelector('tbody');
+ if(!(price>=0&&hours>=0&&hours<=24&&days>=0&&days<=366&&eta>0&&eta<=1)){
+  tb.innerHTML='<tr><td colspan="6">Paramètres énergétiques invalides : vérifier prix, durée, jours et rendement.</td></tr>';
+  $('energySummary').className='status warn';$('energySummary').textContent='Vérifie les paramètres énergétiques.';return;
+ }
+ const results=speeds.map(([label,n])=>{
+  const pf=solveAtSpeed(n);
+  if(!pf.valid)return {label,n,valid:false};
+  const phyd=1000*9.81*pf.q*pf.h/1000;
+  const pelec=phyd/eta;
+  const kwh=pelec*hours*days,cost=kwh*price;
+  return {label,n,valid:true,q:pf.q,h:pf.h,pelec,kwh,cost};
+ });
+ tb.innerHTML=results.map(r=>r.valid?
+  `<tr><td>${r.label} (${fmt(r.n,0)})</td><td>${fmt(r.q*3600,1)}</td><td>${fmt(r.h,2)}</td><td>${fmt(r.pelec,3)}</td><td>${fmt(r.kwh,0)}</td><td>${fmt(r.cost,2)}</td></tr>`:
+  `<tr><td>${r.label} (${fmt(r.n,0)})</td><td colspan="5">Pas de point de fonctionnement trouvé dans la plage de calcul.</td></tr>`
+ ).join('');
+ const valid=results.filter(r=>r.valid);
+ if(valid.length===3){
+  const best=valid.reduce((a,b)=>a.cost<=b.cost?a:b);
+  const worst=valid.reduce((a,b)=>a.cost>=b.cost?a:b);
+  const saving=worst.cost-best.cost;
+  $('energySummary').className='status';
+  $('energySummary').textContent=`Coût annuel le plus faible : ${best.label} à ${fmt(best.n,0)} tr/min (${fmt(best.cost,2)} €/an). Écart avec le plus coûteux : ${fmt(saving,2)} €/an.`;
+ }else{
+  $('energySummary').className='status warn';
+  $('energySummary').textContent='Comparaison partielle : au moins une vitesse ne possède pas de point de fonctionnement dans la plage de calcul.';
+ }
+}
+function populate(){
+ const tb=$('dataTable').querySelector('tbody');
+ tb.innerHTML=baseCurve.map(([q,h],i)=>`<tr>
+  <td>${i+1}</td>
+  <td><input aria-label="Débit du point ${i+1}" data-index="${i}" data-field="q" type="number" min="0" step="0.001" value="${q}" style="width:125px;padding:6px;border:1px solid #cbd5e1;border-radius:6px"></td>
+  <td><input aria-label="Hauteur du point ${i+1}" data-index="${i}" data-field="h" type="number" min="0" step="0.1" value="${h}" style="width:110px;padding:6px;border:1px solid #cbd5e1;border-radius:6px"></td>
+  <td><button type="button" data-delete="${i}" ${baseCurve.length<=2?'disabled title="Deux points minimum"':''}>Supprimer</button></td>
+ </tr>`).join('');
+}
+function validateCurve(){
+ const msg=$('curveMessage');
+ if(baseCurve.length<2){msg.textContent='Il faut au minimum deux points pour tracer une courbe.';msg.style.color='#b45309';return false;}
+ for(let i=0;i<baseCurve.length;i++){
+  const [q,h]=baseCurve[i];
+  if(!Number.isFinite(q)||!Number.isFinite(h)||q<0||h<0){msg.textContent='Valeurs invalides : Q et H doivent être des nombres positifs ou nuls.';msg.style.color='#b45309';return false;}
+  if(i>0&&q<=baseCurve[i-1][0]){msg.textContent='Les débits doivent être strictement croissants et différents.';msg.style.color='#b45309';return false;}
+ }
+ msg.textContent=baseCurve.length+' points valides. Courbe de référence actualisée.';
+ msg.style.color='#176b4c';return true;
+}
+$('dataTable').addEventListener('input',e=>{
+ const input=e.target.closest('input[data-index]');
+ if(!input)return;
+ const i=Number(input.dataset.index),field=input.dataset.field,v=input.value===''?NaN:Number(input.value);
+ if(!baseCurve[i])return;
+ baseCurve[i][field==='q'?0:1]=v;
+ const ok=validateCurve();
+ if(ok)update();else draw();
+});
+$('dataTable').addEventListener('change',e=>{
+ if(!e.target.matches('input[data-index]'))return;
+ if(baseCurve.every(([q,h])=>Number.isFinite(q)&&Number.isFinite(h)&&q>=0&&h>=0)){
+  baseCurve.sort((a,b)=>a[0]-b[0]);
+  populate();
+  if(validateCurve())update();
+ }
+});
+$('dataTable').addEventListener('click',e=>{
+ const btn=e.target.closest('button[data-delete]');
+ if(!btn)return;
+ if(baseCurve.length<=2)return;
+ baseCurve.splice(Number(btn.dataset.delete),1);populate();
+ if(validateCurve())update();
+});
+$('addPoint').addEventListener('click',()=>{
+ const last=baseCurve[baseCurve.length-1];
+ const q=last[0]+(baseCurve.length>1?last[0]-baseCurve[baseCurve.length-2][0]:.004);
+ const h=Math.max(0,last[1]-1);
+ baseCurve.push([Number(q.toFixed(4)),Number(h.toFixed(2))]);
+ populate();validateCurve();update();
+ const inputs=$('dataTable').querySelectorAll('input[data-field="q"]');
+ inputs[inputs.length-1]?.focus();
+});
+$('resetCurve').addEventListener('click',()=>{
+ baseCurve=exerciseCurve.map(p=>[...p]);populate();validateCurve();update();
+});
+['dh','diam','ld','ls','lambda','rough','baseSpeed','wheel','qmax','speed3','energyPrice','hoursDay','daysYear','efficiency'].forEach(id=>$(id).addEventListener('input',()=>{update();}));
+$('speedNumber').addEventListener('input',()=>{if(val('speedNumber')>0){$('speed').value=Math.min(Number($('speed').max),Math.max(Number($('speed').min),val('speedNumber')));update();}});
+$('speed').addEventListener('input',()=>{$('speedNumber').value=$('speed').value;update();});
+$('reset').addEventListener('click',()=>{const defaults={dh:5,diam:100,ld:30,ls:20,lambda:.02,rough:.1,baseSpeed:1450,wheel:213,qmax:.03,speed:1450,speedNumber:1450};for(const [k,v] of Object.entries(defaults))$(k).value=v;showComparisons=true;$('toggleCurves').textContent='Masquer courbes comparatives';update();});
+$('toggleCurves').addEventListener('click',()=>{showComparisons=!showComparisons;$('toggleCurves').textContent=showComparisons?'Masquer courbes comparatives':'Afficher courbes comparatives';draw();});
+window.addEventListener('resize',draw);populate();validateCurve();update();
+</script>
+</body>
+</html>

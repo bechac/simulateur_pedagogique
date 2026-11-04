@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dégrilleur – accumulation et raclage cyclique</title>
+<style>
+:root{--ink:#172638;--muted:#64748b;--line:#dbe3ec;--blue:#167fbd;--orange:#dc8a27;--green:#0d8b70;--bg:#f3f6fa}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Arial,sans-serif}main{max-width:1260px;margin:auto;padding:22px}
+h1{font-size:26px;margin:0 0 5px}.intro{color:var(--muted);margin:0 0 18px}.layout{display:grid;grid-template-columns:350px 1fr;gap:16px;align-items:start}
+.panel{background:white;border:1px solid var(--line);border-radius:12px;padding:17px;box-shadow:0 2px 8px #2030400a}
+h2{font-size:17px;margin:0 0 12px}.group{border-top:1px solid var(--line);padding:12px 0}.group:first-of-type{border-top:0;padding-top:0}
+.field{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:9px 0}.field label{font-size:13px;font-weight:600;max-width:62%}.field input,.field select{width:125px;padding:7px;border:1px solid var(--line);border-radius:6px;font:inherit;text-align:right;background:white}
+.hint,.note{font-size:11px;color:var(--muted)}.results{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}.metric{background:#f8fafc;border:1px solid var(--line);border-radius:9px;padding:11px}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{display:block;font-size:19px;margin:3px 0;font-variant-numeric:tabular-nums}
+canvas{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:9px;background:#f8fbfd}
+.legend{display:flex;gap:13px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:9px 0}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+button{border:0;border-radius:7px;padding:9px 13px;background:#e8f3fb;color:#075985;font-weight:700;cursor:pointer}button.primary{background:var(--blue);color:white}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.status{padding:11px 13px;border-radius:8px;margin-top:12px;font-weight:700}.good{background:#e5f5ef;color:#08734f}.warn{background:#fff0e5;color:#9a4b08}.bad{background:#fee9e9;color:#a12626}
+.formula{font-size:13px;background:#f8fafc;padding:12px;border-radius:8px;margin-top:12px}.formula p{margin:5px 0}.muted{color:var(--muted)}
+.cycle{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fbfdff}.cycleline{height:9px;background:#e5edf4;border-radius:8px;overflow:hidden;margin:7px 0}.cyclefill{height:100%;width:0;background:var(--green)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}main{padding:12px}.results{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body><main>
+<header><h1>Dégrilleur automatique – accumulation et raclage cyclique</h1><p class="intro">La grille démarre propre. Les déchets arrivent avec l'écoulement, s'accumulent contre les barreaux, puis le racleur les enlève. Le cycle recommence automatiquement.</p></header>
+<div class="layout">
+<section class="panel">
+<h2>Paramètres hydrauliques et géométriques</h2>
+<div class="group">
+ <div class="field"><label for="q">Débit de pointe Qp (m³/h)</label><input id="q" type="number" min=".1" step="1" value="300"></div>
+ <div class="field"><label for="vmin">Vitesse minimale de passage (m/s)</label><input id="vmin" type="number" min=".1" step=".05" value=".6"></div>
+ <div class="field"><label for="clog">Coefficient de colmatage Cc</label><input id="clog" type="number" min=".1" max="1" step=".05" value=".7"></div>
+</div>
+<div class="group">
+ <div class="field"><label for="angle">Angle de la grille avec l'horizontale (°)</label><input id="angle" type="number" min="30" max="90" step="1" value="60"></div>
+ <div class="field"><label for="spacing">Espacement libre e (mm)</label><input id="spacing" type="number" min="2" max="100" step="1" value="20"></div>
+ <div class="field"><label for="bar">Épaisseur / diamètre s (mm)</label><input id="bar" type="number" min="2" max="50" step="1" value="10"></div>
+ <div class="field"><label for="depth">Tirant d'eau amont h (m)</label><input id="depth" type="number" min=".1" max="5" step=".05" value=".8"></div>
+ <div class="field"><label for="width">Largeur utile du canal (m)</label><input id="width" type="number" min=".1" max="20" step=".1" value="1.2"></div>
+</div>
+<div class="group"><h2>Accumulation et raclage</h2>
+ <div class="field"><label for="freq">Intervalle entre départs de raclage (min)</label><input id="freq" type="number" min=".1" max="120" step=".5" value=".8"></div>
+ <div class="field"><label for="arrival">Intensité d'arrivée des déchets</label><input id="arrival" type="range" min="1" max="12" step="1" value="6"></div>
+ <div class="field"><label for="scraper">Vitesse du racleur (m/s)</label><input id="scraper" type="number" min=".01" max="1" step=".01" value=".15"></div>
+ <div class="field"><label for="stroke">Course du racleur sur la grille (m)</label><input id="stroke" type="number" min=".2" max="10" step=".1" value="2.5"></div>
+ <div class="field"><label for="pause">Pause en haut (s)</label><input id="pause" type="number" min="0" max="60" step="1" value="2"></div>
+ <div class="field"><label for="returnSpeed">Vitesse de retour (m/s)</label><input id="returnSpeed" type="number" min=".01" max="1" step=".01" value=".2"></div>
+ <div class="hint">L'intervalle règle le déclenchement automatique. La quantité de déchets qui arrive est réglable séparément pour visualiser plus ou moins rapidement l'accumulation.</div>
+</div>
+<div class="group"><h2>Perte de charge – Kirschmer</h2>
+ <div class="field"><label for="shape">Forme des barreaux (β indicatif)</label><select id="shape"><option value="2.42">Rectangulaire à arêtes vives – 2,42</option><option value="1.83">Rectangulaire arrondi – 1,83</option><option value="1.79">Circulaire – 1,79</option><option value="1.67">Profil hydrodynamique – 1,67</option></select></div>
+ <div class="field"><label for="beta">Facteur de forme β</label><input id="beta" type="number" min=".1" max="5" step=".01" value="2.42"></div>
+</div>
+<div class="actions"><button class="primary" id="toggle">▶ Démarrer les cycles</button><button id="reset">Repartir grille propre</button></div>
+<p class="note">Le temps de simulation est accéléré. Le nombre de déchets est illustratif et sert à visualiser le cycle, pas à prédire une masse réelle de refus.</p>
+</section>
+<section class="panel">
+<div class="results">
+ <div class="metric"><small>Coefficient d'ouverture Co</small><strong id="co">—</strong><small>sans unité</small></div>
+ <div class="metric"><small>Surface nette requise</small><strong id="snet">—</strong><small>m²</small></div>
+ <div class="metric"><small>Surface brute estimée</small><strong id="sbrut">—</strong><small>m²</small></div>
+ <div class="metric"><small>Vitesse d'approche</small><strong id="vapp">—</strong><small>m/s</small></div>
+</div>
+<div class="results">
+ <div class="metric"><small>Vitesse dans les ouvertures</small><strong id="vpass">—</strong><small>m/s</small></div>
+ <div class="metric"><small>Perte de charge propre</small><strong id="hloss">—</strong><small>mm CE</small></div>
+ <div class="metric"><small>Perte de charge estimée actuelle</small><strong id="hdirty">—</strong><small>mm CE</small></div>
+ <div class="metric"><small>Taux de grille encombrée</small><strong id="blockage">0 %</strong><small>indicateur visuel</small></div>
+</div>
+<canvas id="viz" width="940" height="530"></canvas>
+<div class="legend"><span><i class="dot" style="background:#dc8a27"></i>Déchets</span><span><i class="dot" style="background:#167fbd"></i>Écoulement</span><span><i class="dot" style="background:#0d8b70"></i>Racleur</span><span><i class="dot" style="background:#64748b"></i>Barreaux</span></div>
+<div class="cycle"><b id="phase">Grille propre – prête à démarrer</b><div class="cycleline"><div id="cyclefill" class="cyclefill"></div></div><span class="hint" id="cycletxt">Démarrer pour voir arriver les déchets et lancer les cycles automatiques.</span></div>
+<div id="status" class="status good">Grille propre au démarrage.</div>
+<div class="formula">
+<b>Calculs hydrauliques</b>
+<p>Co = e / (e + s)</p>
+<p>S nette = Qp / (vmin × Cc × Co) ; S brute = S nette / (Cc × Co)</p>
+<p>Kirschmer : ΔH = β × (s/e)<sup>4/3</sup> × (V²/2g) × sin(α)</p>
+<p>ΔH colmatée ≈ ΔH propre / Cc<sup>2</sup></p>
+<p class="muted">V = Qp/(largeur × tirant d'eau). Correction du colmatage indicative : le taux de déchets animé n'est pas une mesure physique de Cc. β est modifiable.</p>
+</div>
+<p class="note">Le raclage est représenté par un mouvement cinématique le long de la grille. Pendant la montée, les déchets accumulés sont progressivement retirés et transférés vers la goulotte. Une fois le racleur revenu en bas, la grille recommence à se charger.</p>
+</section></div></main>
+<script>
+const $=id=>document.getElementById(id),g=9.81;
+const inputIds=['q','vmin','clog','angle','spacing','bar','depth','width','freq','arrival','scraper','stroke','pause','returnSpeed','beta'];
+const n=id=>Math.max(0,Number($(id).value)||0),fmt=(x,d=2)=>Number.isFinite(x)?x.toLocaleString('fr-FR',{maximumFractionDigits:d}):'—';
+let running=false,raf=0,last=0,simSeconds=0,accumulated=[],incoming=[],removed=0;
+let rake={state:'idle',pos:0,t:0,elapsed:0};
+const SCALE=10; // secondes simulées par seconde réelle
+function calc(){
+ const Q=n('q')/3600,vmin=n('vmin'),Cc=Math.min(1,Math.max(.05,n('clog'))),a=n('angle')*Math.PI/180,e=n('spacing')/1000,s=n('bar')/1000,w=n('width'),h=n('depth'),beta=n('beta');
+ const Co=e/Math.max(e+s,1e-9),Snet=Q/Math.max(vmin*Cc*Co,1e-9),Sgross=Snet/Math.max(Cc*Co,1e-9),V=Q/Math.max(w*h,1e-9),Vopen=V/Math.max(Co,1e-9);
+ const hl=beta*Math.pow(s/Math.max(e,1e-9),4/3)*(V*V/(2*g))*Math.sin(a);
+ const blockage=Math.min(.92,accumulated.length/95),hNow=hl/Math.pow(Math.max(.08,1-blockage),2);
+ $('co').textContent=fmt(Co,3);$('snet').textContent=fmt(Snet,3);$('sbrut').textContent=fmt(Sgross,3);$('vapp').textContent=fmt(V,3);$('vpass').textContent=fmt(Vopen,3);
+ $('hloss').textContent=fmt(hl*1000,1);$('hdirty').textContent=fmt(hNow*1000,1);$('blockage').textContent=fmt(blockage*100,0)+' %';
+ let st=$('status');st.className='status '+(blockage>.65?'bad':blockage>.35?'warn':'good');
+ st.textContent=blockage>.65?'Grille fortement encombrée : le raclage est nécessaire.':blockage>.35?'Accumulation en cours : la perte de charge estimée augmente.':'Accumulation modérée : la grille laisse encore largement passer l’eau.';
+ return {Q,V,Vopen,Co,Snet,Sgross,hl,hNow,w,h,a};
+}
+function times(){let up=n('stroke')/Math.max(n('scraper'),.001),down=n('stroke')/Math.max(n('returnSpeed'),.001);return {up,down,pause:n('pause'),interval:n('freq')*60,total:up+down+n('pause')}}
+function beginRake(){rake.state='up';rake.t=0;rake.elapsed=0}
+function advanceRake(dt){
+ let tm=times();rake.elapsed+=dt;rake.t+=dt;
+ if(rake.state==='idle'&&rake.elapsed>=tm.interval)beginRake();
+ if(rake.state==='up'){rake.pos=Math.min(1,rake.t/Math.max(tm.up,.01));if(rake.t>=tm.up){rake.pos=1;rake.state='pause';rake.t=0}}
+ else if(rake.state==='pause'&&rake.t>=tm.pause){rake.state='down';rake.t=0}
+ else if(rake.state==='down'){rake.pos=Math.max(0,1-rake.t/Math.max(tm.down,.01));if(rake.t>=tm.down){rake.pos=0;rake.state='idle';rake.t=0;rake.elapsed=0}}
+}
+function addTrash(dt){
+ // Déchets transportés par l'eau vers la grille. Une partie se fixe contre la grille.
+ const rate=n('arrival')*.75;
+ let count=rate*dt;
+ while(count>1){incoming.push({x:95+Math.random()*35,y:105+Math.random()*260,r:3+Math.random()*4,v:65+Math.random()*45});count--}
+ if(Math.random()<count)incoming.push({x:95+Math.random()*30,y:105+Math.random()*260,r:3+Math.random()*4,v:65+Math.random()*45});
+ const screenX=475;
+ incoming.forEach(p=>{p.x+=p.v*dt;if(p.x>=screenX){accumulated.push({u:Math.random()*.94+.03,v:Math.random()*.85+.08,r:p.r});p.x=-100}});
+ incoming=incoming.filter(p=>p.x>-50);
+ // Limit density for rendering and stable animation
+ if(accumulated.length>180)accumulated.splice(0,accumulated.length-180);
+}
+function rakeTrash(){
+ // During the upward pass, progressively sweep the accumulated debris from bottom to top.
+ if(rake.state==='up'){
+  const cutoff=rake.pos;
+  const before=accumulated.length;
+  accumulated=accumulated.filter(p=>p.u>cutoff || Math.random()>.88);
+  removed+=before-accumulated.length;
+ }
+}
+function draw(){
+ const c=$('viz'),ctx=c.getContext('2d'),m=calc(),W=c.width,H=c.height;
+ ctx.clearRect(0,0,W,H);
+ const left=95,right=830,top=80,bottom=420;
+ ctx.fillStyle='#eaf7fc';ctx.fillRect(left,top,right-left,bottom-top);
+ ctx.strokeStyle='#526579';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(left,top-25);ctx.lineTo(left,bottom);ctx.lineTo(right,bottom);ctx.lineTo(right,top-25);ctx.stroke();
+ ctx.strokeStyle='#48a9cf';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(right,top);ctx.stroke();
+ ctx.fillStyle='#334155';ctx.font='bold 16px Arial';ctx.fillText('AMONT',105,48);ctx.fillText('AVAL',750,48);
+ // Main flow arrows
+ ctx.strokeStyle='#167fbd';ctx.lineWidth=3;
+ for(let j=0;j<4;j++){let y=130+j*68;ctx.beginPath();ctx.moveTo(135,y);ctx.lineTo(740,y);ctx.stroke();ctx.beginPath();ctx.moveTo(725,y-8);ctx.lineTo(742,y);ctx.lineTo(725,y+8);ctx.stroke()}
+ // Screen geometry
+ const bx=475,by=bottom,len=260,ex=bx+len*Math.cos(m.a),ey=by-len*Math.sin(m.a);
+ ctx.strokeStyle='#475569';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.stroke();
+ for(let i=0;i<21;i++){let t=i/20,x=bx+t*(ex-bx),y=by+t*(ey-by);ctx.strokeStyle='#64748b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-7,y-8);ctx.lineTo(x+7,y+8);ctx.stroke()}
+ // Debris piled on upstream side of screen. Coordinates u=0 at bottom, u=1 at top.
+ accumulated.forEach(p=>{let x=bx+p.u*(ex-bx)-12,y=by+p.u*(ey-by)-8;ctx.fillStyle='#c27a28';ctx.beginPath();ctx.ellipse(x,y,p.r+2,p.r*.65,p.u,0,Math.PI*2);ctx.fill()});
+ // incoming floating debris
+ incoming.forEach(p=>{ctx.fillStyle='#d99a42';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()});
+ // rake position and movement
+ let rx=bx+rake.pos*(ex-bx),ry=by+rake.pos*(ey-by);
+ ctx.strokeStyle='#0d8b70';ctx.lineWidth=12;ctx.beginPath();ctx.moveTo(rx-31,ry-15);ctx.lineTo(rx+31,ry+15);ctx.stroke();
+ ctx.fillStyle='#0d8b70';ctx.beginPath();ctx.arc(rx,ry,9,0,Math.PI*2);ctx.fill();
+ // collection hopper and removed waste
+ ctx.fillStyle='#9a6a36';ctx.fillRect(ex+8,ey-31,90,18);
+ for(let i=0;i<Math.min(18,Math.floor(removed/2));i++){let xx=ex+15+(i%9)*9,yy=ey-38-Math.floor(i/9)*8;ctx.fillStyle='#c27a28';ctx.beginPath();ctx.arc(xx,yy,3.5,0,Math.PI*2);ctx.fill()}
+ ctx.fillStyle='#334155';ctx.font='13px Arial';ctx.fillText('Grille inclinée : '+fmt(n('angle'),0)+'°',105,460);
+ ctx.fillText('Déchets retenus : '+accumulated.length,105,483);
+ ctx.fillText('Déchets évacués (unités visuelles) : '+removed,105,506);
+ ctx.fillStyle='#64748b';ctx.font='12px Arial';ctx.fillText('Schéma de principe – non à l’échelle',700,510);
+ const labels={idle:'Accumulation : grille en service, racleur en attente',up:'Raclage : le racleur monte et enlève les déchets',pause:'Racleur en haut : évacuation des déchets',down:'Retour du racleur en position basse'};
+ $('phase').textContent=labels[rake.state];
+ let tm=times(),progress=rake.state==='idle'?Math.min(1,rake.elapsed/Math.max(tm.interval,.01)):rake.state==='up'?rake.t/Math.max(tm.up,.01):rake.state==='pause'?1:1-rake.t/Math.max(tm.down,.01);
+ $('cyclefill').style.width=(Math.max(0,Math.min(1,progress))*100)+'%';
+ $('cycletxt').textContent='Déclenchement toutes les '+fmt(tm.interval/60,1)+' min · montée '+fmt(tm.up,1)+' s · pause '+fmt(tm.pause,1)+' s · retour '+fmt(tm.down,1)+' s. Déchets accumulés : '+accumulated.length+' · évacués : '+removed+'.';
+}
+function frame(ts){if(!running)return;if(!last)last=ts;let dt=Math.min(.08,(ts-last)/1000)*SCALE;last=ts;addTrash(dt);advanceRake(dt);rakeTrash();draw();raf=requestAnimationFrame(frame)}
+$('toggle').onclick=()=>{running=!running;$('toggle').textContent=running?'Ⅱ Pause':'▶ Démarrer les cycles';if(running){last=0;raf=requestAnimationFrame(frame)}else cancelAnimationFrame(raf)};
+$('reset').onclick=()=>{running=false;cancelAnimationFrame(raf);last=0;simSeconds=0;incoming=[];accumulated=[];removed=0;rake={state:'idle',pos:0,t:0,elapsed:0};$('toggle').textContent='▶ Démarrer les cycles';draw()};
+$('shape').onchange=()=>{$('beta').value=$('shape').value;draw()};
+inputIds.forEach(id=>$(id).addEventListener('input',draw));
+draw();
+</script></body></html>

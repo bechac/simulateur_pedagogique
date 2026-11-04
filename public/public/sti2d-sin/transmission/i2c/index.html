@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulateur et analyseur de trames I²C</title>
+<style>
+:root{--bg:#f3f6fa;--panel:#fff;--ink:#172033;--muted:#64748b;--line:#dbe3ee;--blue:#2563eb;--blue2:#dbeafe;--green:#15803d;--red:#b91c1c;--amber:#b45309}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Arial,sans-serif}
+header{background:#14243b;color:#fff;padding:22px max(20px,calc((100% - 1180px)/2))}
+header h1{margin:0 0 5px;font-size:25px}header p{margin:0;color:#cbd5e1}
+main{max-width:1180px;margin:22px auto;padding:0 16px 40px;display:grid;gap:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 3px 12px #15243b0a}
+h2{font-size:18px;margin:0 0 14px}h3{font-size:15px;margin:16px 0 8px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:13px;color:var(--muted);font-weight:650}
+input,select,textarea,button{font:inherit;border:1px solid #cbd5e1;border-radius:8px;padding:9px 10px;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:2px solid #93c5fd;border-color:var(--blue)}
+textarea{width:100%;min-height:74px;resize:vertical;font-family:ui-monospace,Consolas,monospace}
+button{cursor:pointer;font-weight:650;background:#f8fafc}button.primary{background:var(--blue);border-color:var(--blue);color:#fff}button:hover{filter:brightness(.97)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+.hint{color:var(--muted);font-size:13px;margin:7px 0 0}
+.pills{display:flex;flex-wrap:wrap;gap:8px}.pill{padding:5px 9px;border-radius:999px;background:#eef2f7;font-size:12px;font-weight:700}
+.pill.ok{background:#dcfce7;color:#166534}.pill.warn{background:#fef3c7;color:#92400e}
+.result{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.metric{background:#f8fafc;border:1px solid var(--line);padding:11px;border-radius:10px}.metric small{display:block;color:var(--muted)}.metric strong{font-size:18px;display:block;margin-top:3px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--muted);font-weight:700;background:#f8fafc}
+code,.mono{font-family:ui-monospace,Consolas,monospace}.byte{display:inline-block;background:#eaf1ff;border:1px solid #c7d8ff;border-radius:6px;padding:4px 7px;margin:2px}
+.wavewrap{overflow-x:auto;background:#0f172a;border-radius:10px;padding:10px}.wave{min-width:720px;width:100%;height:190px;display:block}
+.legend{display:flex;gap:15px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:7px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.status{padding:10px;border-radius:8px;background:#eff6ff;color:#1e40af;margin-top:10px}
+@media(max-width:760px){.grid,.result{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.grid,.result{grid-template-columns:1fr}header h1{font-size:21px}}
+</style>
+</head>
+<body>
+<header><h1>Simulateur & analyseur de trames I²C</h1><p>Construire une transaction, décoder les octets et visualiser les échanges SDA / SCL.</p></header>
+<main>
+<section class="panel">
+<h2>1. Paramétrer la transaction</h2>
+<div class="grid">
+ <div class="field"><label for="mode">Type de transaction</label><select id="mode"><option value="write">Écriture (maître → esclave)</option><option value="read">Lecture (esclave → maître)</option><option value="writeRead">Écriture puis lecture (Repeated START)</option></select></div>
+ <div class="field"><label for="address">Adresse esclave (7 bits)</label><input id="address" value="0x48" placeholder="Ex. 0x48"></div>
+ <div class="field"><label for="freq">Fréquence SCL</label><select id="freq"><option value="100000">100 kHz – Standard</option><option value="400000">400 kHz – Fast</option><option value="1000000">1 MHz – Fast Mode Plus</option><option value="10000">10 kHz – mode lent</option></select></div>
+ <div class="field"><label for="count">Nombre d’octets lus</label><input id="count" type="number" min="1" max="16" value="2"></div>
+</div>
+<div class="grid" style="margin-top:12px">
+ <div class="field" style="grid-column:span 2"><label for="writeData">Données envoyées (hexadécimal, séparées par espaces)</label><input id="writeData" value="10 2A" placeholder="Ex. 10 2A FF"></div>
+ <div class="field" style="grid-column:span 2"><label for="readData">Données simulées reçues (hexadécimal)</label><input id="readData" value="3C A5" placeholder="Ex. 3C A5"></div>
+</div>
+<div class="actions"><button class="primary" id="build">Générer / actualiser la trame</button><button id="example">Charger un exemple</button></div>
+<p class="hint">Les octets de lecture sont simulés : dans un vrai bus, ils sont fournis par le périphérique esclave. L’adresse saisie est l’adresse 7 bits, avant ajout du bit R/W.</p>
+</section>
+
+<section class="panel">
+<h2>2. Résultat du décodage</h2>
+<div class="result" id="metrics"></div>
+<h3>Séquence de la transaction</h3>
+<div id="sequence" class="pills"></div>
+<h3>Octets et acquittements</h3>
+<div style="overflow-x:auto"><table><thead><tr><th>Étape</th><th>Octet binaire</th><th>Hexa</th><th>Interprétation</th><th>ACK/NACK</th></tr></thead><tbody id="decode"></tbody></table></div>
+<div id="status" class="status">Configurez la transaction puis cliquez sur « Générer ».</div>
+</section>
+
+
+<section class="panel">
+<h2>3. Schéma dynamique du bus I²C</h2>
+<div style="background:#102039;border-radius:12px;padding:12px;overflow-x:auto">
+<svg id="busDiagram" viewBox="0 0 900 250" style="width:100%;min-width:620px;display:block" role="img" aria-label="Maître et esclave reliés par SDA et SCL">
+ <defs>
+  <marker id="arrI2c" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="#fff"/></marker>
+ </defs>
+ <rect x="35" y="75" width="190" height="110" rx="14" fill="#24476c" stroke="#9bc5f5" stroke-width="2"/>
+ <text x="130" y="112" fill="white" font-size="19" font-weight="bold" text-anchor="middle">MAÎTRE</text>
+ <text x="130" y="139" fill="#dbeafe" font-size="13" text-anchor="middle">Arduino / ESP32</text>
+ <rect x="675" y="75" width="190" height="110" rx="14" fill="#24476c" stroke="#9bc5f5" stroke-width="2"/>
+ <text x="770" y="112" fill="white" font-size="19" font-weight="bold" text-anchor="middle">ESCLAVE</text>
+ <text id="visualSlaveAddr" x="770" y="139" fill="#dbeafe" font-size="13" text-anchor="middle">Adresse 0x48</text>
+ <path d="M225 105 H675" stroke="#38bdf8" stroke-width="4"/>
+ <path d="M225 160 H675" stroke="#facc15" stroke-width="4"/>
+ <text x="450" y="94" fill="#bae6fd" font-size="14" font-weight="bold" text-anchor="middle">SCL · HORLOGE</text>
+ <text x="450" y="184" fill="#fef08a" font-size="14" font-weight="bold" text-anchor="middle">SDA · DONNÉES</text>
+ <g stroke="#c4b5fd" stroke-width="2" fill="none">
+  <path d="M350 105 V38 M342 38 H358 M345 44 H355 M348 50 H352"/>
+  <path d="M550 160 V38 M542 38 H558 M545 44 H555 M548 50 H552"/>
+ </g>
+ <text x="350" y="25" fill="#ddd6fe" font-size="11" text-anchor="middle">Pull-up SCL</text>
+ <text x="550" y="25" fill="#ddd6fe" font-size="11" text-anchor="middle">Pull-up SDA</text>
+ <circle id="dataPacket" cx="225" cy="160" r="8" fill="#fb923c" stroke="white" stroke-width="2">
+  <animate attributeName="cx" values="225;675;225" dur="4s" repeatCount="indefinite"/>
+ </circle>
+ <text id="visualDirection" x="450" y="225" fill="#e2e8f0" font-size="13" text-anchor="middle">En attente d'une transaction</text>
+</svg>
+</div>
+<p class="hint" id="visualExplanation">Le maître initie l'échange. Les résistances de rappel maintiennent SDA et SCL à l'état haut au repos.</p>
+</section>
+
+<section class="panel">
+<h2>4. Visualisation temporelle simplifiée</h2>
+<div class="wavewrap"><svg id="wave" class="wave" viewBox="0 0 1000 190" role="img" aria-label="Chronogramme simplifié des signaux SDA et SCL"></svg></div>
+<div class="legend"><span><i class="dot" style="background:#38bdf8"></i>SCL – horloge</span><span><i class="dot" style="background:#facc15"></i>SDA – données</span><span>START : SDA descend lorsque SCL est haut</span><span>STOP : SDA monte lorsque SCL est haut</span></div>
+<p class="hint">Chronogramme pédagogique : les fronts sont représentés de manière idéalisée. Les temps de montée, capacités de bus et délais électriques ne sont pas modélisés.</p>
+</section>
+
+<section class="panel">
+<h2>5. Décoder une trame saisie</h2>
+<p class="hint">Saisissez les octets dans l’ordre du bus, sans les bits START/STOP. Le premier octet contient l’adresse sur 7 bits et le bit R/W (bit 0).</p>
+<div class="field"><label for="raw">Octets bruts (hexadécimal séparé par des espaces ou virgules)</label><textarea id="raw" placeholder="Ex. 0x90 0x10 0x2A"></textarea></div>
+<div class="actions"><button class="primary" id="analyze">Analyser les octets</button><button id="copy">Copier le décodage</button></div>
+<div id="rawResult"></div>
+</section>
+<section class="panel">
+<h2>6. Repères pour l’analyse</h2>
+<div class="grid">
+ <div><b>START (S)</b><p class="hint">SDA passe de 1 à 0 alors que SCL est à 1.</p></div>
+ <div><b>Adresse + R/W</b><p class="hint">Les 7 bits de poids fort identifient l’esclave. Le bit 0 vaut 0 en écriture et 1 en lecture.</p></div>
+ <div><b>ACK / NACK</b><p class="hint">Après 8 bits, le récepteur place ACK=0 ou NACK=1 sur le 9e cycle.</p></div>
+ <div><b>STOP (P)</b><p class="hint">SDA passe de 0 à 1 alors que SCL est à 1.</p></div>
+</div>
+<p class="hint">Attention : une capture logique réelle peut inclure des START répétés, des octets d’adresse 10 bits, du clock stretching, des erreurs de timing ou des transactions multi-maîtres. Cette version traite le format courant à adresse 7 bits.</p>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let lastText='';
+function parseHexList(s){return s.trim()?s.trim().split(/[\\s,;]+/).filter(Boolean).map(x=>{let v=parseInt(x.replace(/^0x/i,''),16);if(!Number.isInteger(v)||v<0||v>255)throw Error('Octet hexadécimal invalide : '+x);return v;}):[]}
+function parseAddress(){let s=$('address').value.trim();let n=parseInt(s.replace(/^0x/i,''),16);if(!Number.isInteger(n)||n<0||n>0x7f)throw Error('Adresse invalide : saisir une adresse 7 bits entre 0x00 et 0x7F.');return n}
+function byte(v){return '0x'+v.toString(16).padStart(2,'0').toUpperCase()}
+function bits(v){return v.toString(2).padStart(8,'0')}
+
+function updateBusDiagram(addr, mode){
+ const addrNode=$('visualSlaveAddr');
+ const direction=$('visualDirection');
+ const explanation=$('visualExplanation');
+ const packet=$('dataPacket');
+ if(addrNode) addrNode.textContent='Adresse '+byte(addr);
+ if(direction) direction.textContent =
+   mode==='write' ? 'Écriture : MAÎTRE  →  ESCLAVE' :
+   mode==='read' ? 'Lecture : ESCLAVE  →  MAÎTRE' :
+   'Écriture du registre puis lecture (START répété)';
+ if(explanation) explanation.textContent =
+   mode==='write' ? 'Le maître transmet l’adresse avec R/W=0, puis les données. L’esclave acquitte les octets reçus.' :
+   mode==='read' ? 'Le maître transmet l’adresse avec R/W=1. L’esclave émet les données ; le maître termine la lecture.' :
+   'Le maître écrit d’abord une adresse de registre, génère un START répété puis relance l’adresse en lecture.';
+ if(packet) packet.setAttribute('fill',mode==='read'?'#4ade80':'#fb923c');
+}
+
+function build(){
+ try{
+  const addr=parseAddress(),mode=$('mode').value,wd=parseHexList($('writeData').value),rd=parseHexList($('readData').value);
+  const count=Math.max(1,Math.min(16,Number($('count').value)||1));
+  const steps=[],rows=[],events=[];
+  const start=()=>{steps.push('START');events.push({type:'start'});};
+  const stop=()=>{steps.push('STOP');events.push({type:'stop'});};
+  const add=(v,label,ack=true)=>{rows.push({v,label,ack});events.push({type:'byte',v,ack});};
+  const address=(read)=>{let v=(addr<<1)|(read?1:0);add(v,'Adresse '+byte(addr)+' · '+(read?'lecture':'écriture'),true);};
+  const write=()=>{address(false);wd.forEach((v,i)=>add(v,'Donnée écrite n°'+(i+1),true));};
+  const read=()=>{address(true);let data=rd.slice(0,count);while(data.length<count)data.push(0);data.forEach((v,i)=>add(v,'Donnée lue n°'+(i+1),i!==data.length-1));};
+  start();
+  if(mode==='write')write();
+  if(mode==='read')read();
+  if(mode==='writeRead'){write();steps.push('REPEATED START');events.push({type:'start'});read();}
+  stop();
+  const ackCount=rows.filter(r=>r.ack).length;
+  $('metrics').innerHTML=[
+   ['Adresse 7 bits',byte(addr)],['Adresse + R/W',rows.length?byte(rows.find(r=>r.label.startsWith('Adresse')).v):'—'],
+   ['Nombre d’octets',rows.length],['Horloge SCL',(Number($('freq').value)/1000)+' kHz']
+  ].map(x=>`<div class="metric"><small>${x[0]}</small><strong>${x[1]}</strong></div>`).join('');
+  $('sequence').innerHTML=steps.map(s=>`<span class="pill ${s.includes('START')?'ok':s==='STOP'?'warn':''}">${s}</span>`).join('');
+  $('decode').innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td class="mono">${bits(r.v)}</td><td><b>${byte(r.v)}</b></td><td>${r.label}${r.label.startsWith('Adresse')?`<br><span class="hint">Adresse=${byte(r.v>>1)} · R/W=${r.v&1} (${(r.v&1)?'lecture':'écriture'})</span>`:''}</td><td><b style="color:${r.ack?'#15803d':'#b91c1c'}">${r.ack?'ACK (0)':'NACK (1)'}</b></td></tr>`).join('');
+  $('status').textContent=`Trame construite : ${rows.length} octet(s), ${ackCount} ACK et ${rows.length-ackCount} NACK. En I²C, le 9e bit de chaque octet est l’acquittement du récepteur.`;
+  drawWave(events);
+  updateBusDiagram(addr,mode);
+  lastText=rows.map((r,i)=>`${i+1}. ${byte(r.v)} (${bits(r.v)}) — ${r.label} — ${r.ack?'ACK':'NACK'}`).join('\\n');
+ }catch(e){$('status').textContent=e.message;$('status').style.background='#fee2e2';$('status').style.color='#991b1b';}
+}
+function drawWave(events){
+ const svg=$('wave');
+ const left=55, right=980, topScl=28, lowScl=55, highSda=96, lowSda=145;
+ const unit=(right-left)/Math.max(1, events.reduce((n,e)=>n+(e.type==='byte'?9:1),0));
+ let x=left, sclPath=`M${left} ${topScl}`, sdaPath=`M${left} ${highSda}`;
+ let scl=1, sda=1, labels=[];
+
+ const line=(path, nx, ny)=>path+` L${nx} ${ny}`;
+ const setScl=(v,nx)=>{
+   const y=v?topScl:lowScl;
+   if(scl!==v){sclPath=line(sclPath,x,y);scl=v;}
+   sclPath=line(sclPath,nx,y);
+ };
+ const setSda=(v,nx, label)=>{
+   const y=v?highSda:lowSda;
+   if(sda!==v){
+     sdaPath=line(sdaPath,x,sda?lowSda:highSda);
+     sdaPath=line(sdaPath,x,y);
+     sda=v;
+   }
+   sdaPath=line(sdaPath,nx,y);
+   if(label) labels.push({x:(x+nx)/2,text:label});
+ };
+ const half=unit/2;
+
+ // État de repos du bus : SDA=1 et SCL=1.
+ sclPath=`M${left} ${topScl} L${left} ${topScl}`;
+ sdaPath=`M${left} ${highSda} L${left} ${highSda}`;
+
+ events.forEach(e=>{
+   if(e.type==='start'){
+     // START : SDA reste d'abord à 1, puis présente un front vertical 1→0
+     // pendant que SCL reste à 1. On construit ce segment explicitement
+     // pour éviter une diagonale artificielle au début du chronogramme.
+     setScl(1,x+unit);
+     sdaPath += ` L${x+half} ${highSda} L${x+half} ${lowSda} L${x+unit} ${lowSda}`;
+     sda=0;
+     labels.push({x:x+half,text:'START'});
+     x+=unit;
+   }else if(e.type==='stop'){
+     // STOP : SCL monte alors que SDA est bas, puis SDA remonte avec SCL haut.
+     setScl(0,x+half);
+     setSda(0,x+half);
+     x+=half;
+     setScl(1,x+half);
+     setSda(1,x+half,'STOP');
+     x+=half;
+   }else if(e.type==='byte'){
+     for(let i=7;i>=0;i--){
+       const bit=(e.v>>i)&1;
+       // Donnée stable pendant toute la phase haute de SCL.
+       setScl(0,x+half);
+       setSda(bit,x+half);
+       x+=half;
+       setScl(1,x+half);
+       setSda(bit,x+half);
+       x+=half;
+     }
+     // 9e coup d'horloge : acquittement du récepteur.
+     const ackBit=e.ack?0:1;
+     setScl(0,x+half);
+     setSda(ackBit,x+half);
+     x+=half;
+     setScl(1,x+half);
+     setSda(ackBit,x+half);
+     x+=half;
+     labels.push({x:x-unit/2,text:e.ack?'ACK':'NACK'});
+   }
+ });
+
+ const end=right;
+ // Maintenir les deux lignes à leur dernier état jusqu'à la fin du dessin.
+ sclPath+=` L${end} ${scl?topScl:lowScl}`;
+ sdaPath+=` L${end} ${sda?highSda:lowSda}`;
+ let out=`<rect x="0" y="0" width="1000" height="190" fill="#0f172a"/>
+ <text x="8" y="32" fill="#7dd3fc" font-size="13">SCL</text>
+ <text x="8" y="112" fill="#fde047" font-size="13">SDA</text>
+ <text x="55" y="14" fill="#94a3b8" font-size="10">Chronogramme logique I²C — périodes SCL régulières</text>
+ <path d="${sclPath}" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linejoin="miter"/>
+ <path d="${sdaPath}" fill="none" stroke="#facc15" stroke-width="2.5" stroke-linejoin="miter"/>`;
+ labels.forEach(l=>{
+   out+=`<text x="${l.x}" y="174" fill="#fff" font-size="10" text-anchor="middle">${l.text}</text>`;
+ });
+ svg.innerHTML=out;
+}
+function analyze(){
+ try{
+ const a=parseHexList($('raw').value);if(!a.length)throw Error('Saisissez au moins un octet.');
+ const first=a[0],addr=first>>1,rw=first&1;
+ let html=`<div class="status"><b>Adresse détectée :</b> ${byte(addr)} (${addr}) · <b>R/W :</b> ${rw?'1 – lecture':'0 – écriture'} · <b>Octets suivants :</b> ${a.length-1}</div>`;
+ html+='<div style="overflow-x:auto"><table><thead><tr><th>Position</th><th>Valeur</th><th>Binaire</th><th>Décodage</th></tr></thead><tbody>';
+ a.forEach((v,i)=>{let label=i===0?'Adresse + bit R/W':(rw?'Donnée retournée par l’esclave':'Donnée envoyée à l’esclave');html+=`<tr><td>${i+1}</td><td><b>${byte(v)}</b></td><td class="mono">${bits(v)}</td><td>${label}${i===0?`<br>Adresse=${byte(addr)}, R/W=${rw}`:''}</td></tr>`;});
+ html+='</tbody></table></div><p class="hint">Les ACK/NACK, START et STOP ne sont pas contenus dans cette liste d’octets : ils doivent être lus séparément dans la capture logique.</p>';
+ $('rawResult').innerHTML=html;
+ lastText=`Adresse esclave : ${byte(addr)} (${addr})\\nR/W : ${rw?'lecture':'écriture'}\\n`+a.map((v,i)=>`${i+1}. ${byte(v)} ${bits(v)} — ${i===0?'Adresse + R/W':(rw?'Donnée lue':'Donnée écrite')}`).join('\\n');
+ }catch(e){$('rawResult').innerHTML=`<div class="status" style="background:#fee2e2;color:#991b1b">${e.message}</div>`;}
+}
+$('build').addEventListener('click',()=>{ $('status').style.background='#eff6ff';$('status').style.color='#1e40af';build();});
+$('example').addEventListener('click',()=>{$('mode').value='writeRead';$('address').value='0x48';$('writeData').value='10';$('readData').value='3C A5';$('count').value='2';build();});
+$('analyze').addEventListener('click',analyze);
+$('copy').addEventListener('click',()=>{if(!lastText){$('rawResult').textContent='Aucun décodage à copier.';return;}navigator.clipboard?.writeText(lastText).then(()=>{$('rawResult').insertAdjacentHTML('afterbegin','<div class="status">Décodage copié.</div>');}).catch(()=>{$('rawResult').insertAdjacentHTML('afterbegin','<div class="status">Copie automatique indisponible dans ce navigateur.</div>');});});
+$('mode').addEventListener('change',()=>{$('count').disabled=$('mode').value==='write';});
+build();
+</script>
+</body></html>

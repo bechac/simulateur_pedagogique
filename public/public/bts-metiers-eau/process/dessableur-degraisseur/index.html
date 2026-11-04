@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulateur – Dessableur dégraisseur</title>
+<style>
+:root{--bg:#eef3f7;--panel:#fff;--ink:#172b3a;--muted:#607586;--line:#d9e3ea;--blue:#168ac5;--cyan:#6ed6e8;--sand:#c89b53;--grease:#d9b84e;--green:#218a73;--red:#c65353}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink)}
+header{background:#15384d;color:white;padding:22px max(22px,calc((100% - 1400px)/2));}
+header .eyebrow{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#9fd7e7;font-weight:700}
+h1{margin:4px 0 5px;font-size:clamp(22px,3vw,32px)}header p{margin:0;color:#d1e1e9;max-width:850px}
+main{max-width:1400px;margin:22px auto;padding:0 18px 36px;display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;box-shadow:0 5px 18px #1c3b5010}
+.controls{padding:18px;height:max-content}.section-title{font-size:16px;font-weight:750;margin:0 0 12px}
+.control{padding:12px 0;border-top:1px solid #edf1f4}.control:first-of-type{border-top:0}
+.control label{display:flex;justify-content:space-between;gap:8px;font-weight:650;font-size:13px}
+.control output{color:#087eae;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:#168ac5;margin:12px 0 2px}
+.hint{font-size:11px;color:var(--muted)}
+.actions{display:flex;gap:8px;margin-top:14px}.btn{border:0;border-radius:9px;padding:10px 12px;font-weight:700;cursor:pointer}.primary{background:#147fae;color:white}.secondary{background:#e9f1f5;color:#24485b}
+.content{display:grid;gap:18px;min-width:0}.visual{padding:16px 18px 12px;overflow:hidden}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.status{font-size:12px;color:#16836c;background:#e8f6f1;border-radius:99px;padding:5px 10px;font-weight:700}
+.scene{width:100%;height:auto;display:block;max-height:510px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12px;padding:0 8px 6px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.metric{padding:13px 14px}.metric small{display:block;color:var(--muted);font-size:11px;font-weight:650}.metric strong{display:block;font-size:22px;margin-top:4px;font-variant-numeric:tabular-nums}.metric em{font-style:normal;color:var(--muted);font-size:11px}
+.results{padding:17px}.results-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.result{background:#f5f8fa;border-radius:10px;padding:11px}.result span{display:block;color:var(--muted);font-size:11px}.result b{font-size:17px;font-variant-numeric:tabular-nums}
+.check{margin-top:12px;padding:11px 13px;border-radius:10px;font-size:13px;font-weight:650}.ok{background:#e8f6f1;color:#176b58}.warn{background:#fff2e4;color:#9a5a13}.bad{background:#fdeeee;color:#a43e3e}
+.note{padding:14px 17px;color:#536a79;font-size:12px}.note b{color:#28485b}
+#tank-water{transition:all .25s} .bubble{animation:rise 2.8s linear infinite}.bubble:nth-child(2n){animation-delay:-1.1s}.bubble:nth-child(3n){animation-delay:-2s}
+@keyframes rise{0%{transform:translateY(0);opacity:.1}20%{opacity:.8}100%{transform:translateY(-175px);opacity:0}}
+.sand-particle{animation:fall 4s linear infinite}.sand-particle:nth-child(2n){animation-delay:-2s}
+@keyframes fall{0%{transform:translateY(-80px);opacity:0}20%{opacity:1}100%{transform:translateY(70px);opacity:0}}
+.grease-particle{animation:float 4s ease-in-out infinite alternate}
+@keyframes float{from{transform:translateY(12px)}to{transform:translateY(-12px)}}
+@media(max-width:900px){main{grid-template-columns:1fr}.controls{display:grid;grid-template-columns:1fr 1fr;column-gap:18px}.controls .section-title,.actions{grid-column:1/-1}}
+@media(max-width:600px){main{padding:0 10px;margin:12px auto}.controls{display:block}.metrics{grid-template-columns:repeat(2,1fr)}.results-grid{grid-template-columns:repeat(2,1fr)}.visual{padding:12px 8px}}
+</style>
+</head>
+<body>
+<header><div class="eyebrow">Outil pédagogique interactif</div><h1>Dimensionnement d’un dessableur–dégraisseur</h1><p>Modèle cylindro-conique animé : faites varier les paramètres et observez leur effet sur les dimensions de l’ouvrage et sur les phénomènes de séparation.</p></header>
+<main>
+<aside class="panel controls">
+<h2 class="section-title">Paramètres d’entrée</h2>
+<div class="control"><label for="q">Débit nominal <output id="qv">125 m³/h</output></label><input id="q" type="range" min="20" max="500" step="5" value="125"><div class="hint">Débit moyen entrant dans l’ouvrage</div></div>
+<div class="control"><label for="ts">Temps de séjour <output id="tsv">10 min</output></label><input id="ts" type="range" min="5" max="30" step="1" value="10"><div class="hint">Temps de séjour au débit de pointe</div></div>
+<div class="control"><label for="va">Vitesse ascensionnelle <output id="vav">10 m/h</output></label><input id="va" type="range" min="4" max="20" step=".5" value="10"><div class="hint">Vitesse ascensionnelle de référence</div></div>
+<div class="control"><label for="angle">Pente du cône <output id="anglev">50°</output></label><input id="angle" type="range" min="35" max="70" step="1" value="50"><div class="hint">Angle du cône par rapport à l’horizontale</div></div>
+<div class="control"><label for="air">Insufflation d’air <output id="airv">1,5 m³/m³</output></label><input id="air" type="range" min=".2" max="3" step=".1" value="1.5"><div class="hint">Volume d’air par volume d’eau traité</div></div>
+<div class="actions"><button class="btn primary" id="play">Pause animation</button><button class="btn secondary" id="reset">Réinitialiser</button></div>
+</aside>
+<section class="content">
+<div class="panel visual">
+<div class="topline"><h2 class="section-title">Vue en coupe – fonctionnement de l’ouvrage</h2><span class="status" id="runstate">Séparation en cours</span></div>
+<svg class="scene" viewBox="0 0 820 480" role="img" aria-label="Schéma animé d'un dessableur dégraisseur cylindro-conique">
+<defs>
+ <clipPath id="tankClip"><path d="M230 85 L590 85 L590 285 L410 430 L230 285 Z"/></clipPath>
+ <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a7e6f1" stop-opacity=".7"/><stop offset="1" stop-color="#279ac7" stop-opacity=".85"/></linearGradient>
+ <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d7b16e"/><stop offset="1" stop-color="#9c7138"/></linearGradient>
+ <marker id="arrow" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="#168ac5"/></marker>
+</defs>
+<!-- pipework -->
+<path d="M75 160 H230" stroke="#168ac5" stroke-width="17" fill="none" stroke-linecap="round"/><path d="M75 160 H220" stroke="#b9eaf3" stroke-width="5" fill="none" marker-end="url(#arrow)"/>
+<text x="74" y="137" font-size="14" fill="#31566b" font-weight="700">Eau brute</text>
+<path d="M590 155 H735 V125" stroke="#168ac5" stroke-width="15" fill="none" stroke-linecap="round"/><path d="M600 155 H728" stroke="#b9eaf3" stroke-width="4" fill="none" marker-end="url(#arrow)"/><text x="650" y="105" font-size="14" fill="#31566b" font-weight="700">Eau traitée</text>
+<!-- tank -->
+<g clip-path="url(#tankClip)">
+ <rect id="tank-water" x="230" y="85" width="360" height="345" fill="url(#water)"/>
+ <path d="M225 132 Q270 122 315 132 T405 132 T495 132 T600 132" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/>
+ <rect x="230" y="85" width="360" height="30" fill="#d9b84e" opacity=".9"/>
+ <g id="grease"><ellipse class="grease-particle" cx="300" cy="105" rx="8" ry="4" fill="#d9b84e"/><ellipse class="grease-particle" cx="360" cy="100" rx="10" ry="4" fill="#cba63f"/><ellipse class="grease-particle" cx="445" cy="108" rx="9" ry="4" fill="#e3c65e"/><ellipse class="grease-particle" cx="520" cy="101" rx="8" ry="4" fill="#cba63f"/></g>
+ <g id="bubbles"></g>
+ <g id="sand-particles"></g>
+ <path d="M390 390 Q410 420 430 390" fill="none" stroke="#9b7037" stroke-width="1"/>
+ <path d="M360 360 L410 425 L460 360" fill="url(#sand)" opacity=".88"/>
+</g>
+<path d="M230 85 L230 285 L410 430 L590 285 L590 85" fill="none" stroke="#31566b" stroke-width="8" stroke-linejoin="round"/>
+<path d="M230 85 H590" stroke="#31566b" stroke-width="8"/>
+<!-- air ring / diffuser -->
+<path d="M270 245 Q410 275 550 245" fill="none" stroke="#4b8497" stroke-width="7" stroke-dasharray="7 5"/>
+<path d="M410 300 V245" stroke="#4b8497" stroke-width="7"/><text x="600" y="260" font-size="13" fill="#31566b">Diffuseur d’air</text><path d="M560 252 L540 250" stroke="#31566b" stroke-width="1.5"/>
+<!-- sludge cone outlet -->
+<path d="M410 430 V458 H465" fill="none" stroke="#8d6537" stroke-width="9" stroke-linecap="round"/><text x="475" y="463" font-size="13" fill="#795b32" font-weight="700">Extraction des sables</text>
+<!-- labels -->
+<text x="40" y="285" font-size="14" fill="#795b32" font-weight="700">Sables</text><path d="M90 280 L340 370" stroke="#a17b43" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="625" y="190" font-size="14" fill="#927718" font-weight="700">Graisses</text><path d="M620 195 L535 108" stroke="#b99c32" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="625" y="330" font-size="14" fill="#168ac5" font-weight="700">Mise en mouvement</text><text x="625" y="348" font-size="12" fill="#607586">par insufflation d’air</text>
+<text x="25" y="445" font-size="12" fill="#607586">Schéma de principe – non à l’échelle</text>
+</svg>
+<div class="legend"><span><i class="dot" style="background:#168ac5"></i>Eau</span><span><i class="dot" style="background:#d9b84e"></i>Graisses flottantes</span><span><i class="dot" style="background:#b88b4e"></i>Sables décantés</span><span><i class="dot" style="background:#fff;border:1px solid #168ac5"></i>Air insufflé</span></div>
+</div>
+<div class="metrics">
+<div class="panel metric"><small>Débit de pointe</small><strong id="mqp">—</strong><em>m³/h</em></div>
+<div class="panel metric"><small>Diamètre du bassin</small><strong id="md">—</strong><em>m</em></div>
+<div class="panel metric"><small>Hauteur cylindrique</small><strong id="mhc">—</strong><em>m</em></div>
+<div class="panel metric"><small>Débit d’air</small><strong id="mair">—</strong><em>m³/h</em></div>
+</div>
+<div class="panel results">
+<h2 class="section-title">Résultats du dimensionnement</h2>
+<div class="results-grid">
+<div class="result"><span>Coefficient de pointe Cp</span><b id="cp">—</b></div>
+<div class="result"><span>Surface du bassin</span><b id="surface">—</b></div>
+<div class="result"><span>Volume total</span><b id="volume">—</b></div>
+<div class="result"><span>Rapport V/S</span><b id="vs">—</b></div>
+<div class="result"><span>Hauteur du cône</span><b id="hcone">—</b></div>
+<div class="result"><span>Débit d’air horaire</span><b id="airflow">—</b></div>
+</div>
+<div class="check" id="checkvs"></div><div class="check" id="checkh"></div>
+</div>
+<div class="panel note"><b>À propos du modèle :</b> les calculs reprennent les relations du tableur : Cp = 1,5 + 2,5 / √Qp (avec Q nominal converti en L/s), Qp = Cp × Qnom, S = Qp / vitesse ascensionnelle, D = √(4S/π), V = Qp × temps de séjour. La hauteur cylindrique est recalculée par bilan géométrique : Hcyl = V/S − Hcône/3. Le schéma illustre les principes de séparation ; il ne constitue pas une simulation CFD ni une validation réglementaire du dimensionnement.</div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const ids=['q','ts','va','angle','air'];
+const defaults={q:125,ts:10,va:10,angle:50,air:1.5};
+const fmt=(n,d=2)=>Number.isFinite(n)?n.toFixed(d).replace('.',','):'—';
+function calculate(){
+ const q=+$('q').value, ts=+$('ts').value, va=+$('va').value, a=+$('angle').value, air=+$('air').value;
+ $('qv').textContent=q+' m³/h';$('tsv').textContent=ts+' min';$('vav').textContent=fmt(va,1)+' m/h';$('anglev').textContent=a+'°';$('airv').textContent=fmt(air,1)+' m³/m³';
+ // Le calcul du Cp du fichier utilise le débit nominal converti en L/s.
+ const qls=q*1000/3600, cp=1.5+2.5/Math.sqrt(qls), qp=cp*q;
+ const s=qp/va, d=Math.sqrt(4*s/Math.PI), v=qp*ts/60, hc=Math.tan(a*Math.PI/180)*(d/2);
+ const hcy=v/s-hc/3, ratio=v/s, debitAir=air*qp;
+ $('mqp').textContent=fmt(qp,1);$('md').textContent=fmt(d,2);$('mhc').textContent=fmt(hcy,2);$('mair').textContent=fmt(debitAir,1);
+ $('cp').textContent=fmt(cp,2);$('surface').textContent=fmt(s,2)+' m²';$('volume').textContent=fmt(v,2)+' m³';$('vs').textContent=fmt(ratio,2)+' m';$('hcone').textContent=fmt(hc,2)+' m';$('airflow').textContent=fmt(debitAir,1)+' m³/h';
+ const cv=$('checkvs');cv.className='check '+(ratio>=1.25&&ratio<=2.5?'ok':'warn');cv.textContent='Vérification V/S : '+(ratio>=1.25&&ratio<=2.5?'dans la plage cible (1,25 à 2,5 m).':'hors de la plage cible (1,25 à 2,5 m).');
+ const ch=$('checkh');ch.className='check '+(hcy>0&&hcy<.8?'ok':'bad');ch.textContent='Hauteur cylindrique : '+(hcy>0&&hcy<.8?'inférieure à 0,80 m (critère indicatif du tableur).':hcy<=0?'négative ou nulle : géométrie impossible avec ces paramètres.':'supérieure ou égale à 0,80 m (critère du tableur non respecté).');
+ // Update tank proportions and particles density for visual feedback.
+ const waterHeight=Math.max(90,Math.min(345,210+(ts-10)*5));
+ $('tank-water').setAttribute('y',430-waterHeight);$('tank-water').setAttribute('height',waterHeight);
+ const cone=document.querySelector('#tankClip path'); // geometry remains schematic; values shown numerically
+ $('bubbles').innerHTML='';$('sand-particles').innerHTML='';
+ const nb=Math.max(12,Math.min(48,Math.round(air*15)));
+ for(let i=0;i<nb;i++){let x=270+(i*47%280), y=270+(i*29%110), r=2+(i%3);$('bubbles').insertAdjacentHTML('beforeend',`<circle class="bubble" cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#e9fbff" stroke-width="1.8"/>`);}
+ for(let i=0;i<18;i++){let x=280+(i*37%260), y=175+(i*31%125), r=2+(i%3);$('sand-particles').insertAdjacentHTML('beforeend',`<circle class="sand-particle" cx="${x}" cy="${y}" r="${r}" fill="#b88b4e"/>`);}
+}
+ids.forEach(id=>$(id).addEventListener('input',calculate));
+let playing=true; $('play').onclick=()=>{playing=!playing;document.querySelectorAll('.bubble,.sand-particle,.grease-particle').forEach(el=>el.style.animationPlayState=playing?'running':'paused');$('play').textContent=playing?'Pause animation':'Reprendre animation';$('runstate').textContent=playing?'Séparation en cours':'Animation en pause';};
+$('reset').onclick=()=>{ids.forEach(id=>$(id).value=defaults[id]);if(!playing)$('play').click();calculate();};
+calculate();
+</script>
+</body>
+</html>
