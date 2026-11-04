@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laboratoire de logique combinatoire — STI2D</title>
+<style>
+:root{--bg:#f3f6fb;--panel:#fff;--ink:#17243a;--muted:#617089;--line:#dbe3ef;--blue:#2463eb;--blue2:#eaf1ff;--green:#16834b;--red:#c53c45;--amber:#a96608;--shadow:0 8px 24px rgba(25,45,80,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:linear-gradient(120deg,#142947,#2456a4);color:white;padding:24px clamp(16px,4vw,48px)}
+header h1{margin:0 0 6px;font-size:clamp(23px,3vw,34px)}header p{margin:0;color:#dce8ff}
+main{max-width:1400px;margin:auto;padding:22px clamp(12px,3vw,30px) 48px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.tab{border:1px solid var(--line);background:white;color:var(--ink);border-radius:10px;padding:10px 15px;font-weight:700;cursor:pointer}.tab.active{background:var(--blue);color:white;border-color:var(--blue)}
+.layout{display:grid;grid-template-columns:minmax(280px,390px) minmax(0,1fr);gap:18px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+h2{font-size:19px;margin:0 0 14px}h3{font-size:15px;margin:0 0 10px}
+label{display:block;font-weight:650;margin:12px 0 5px}select,input,button{font:inherit}select,input[type=text]{width:100%;padding:10px 11px;border:1px solid #cbd5e3;border-radius:9px;background:white;color:var(--ink)}
+button{cursor:pointer}.btn{border:0;border-radius:9px;padding:10px 14px;background:var(--blue);color:white;font-weight:700}.btn.secondary{background:#e8eef8;color:#233957}.btn.danger{background:#fae9ea;color:#9f2730}.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.small{font-size:12px;color:var(--muted)}.hint{padding:10px 12px;background:#f0f5ff;border-left:3px solid var(--blue);border-radius:7px;color:#304565;margin-top:12px}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.chip{border:1px solid var(--line);background:#f8faff;padding:7px 10px;border-radius:8px;font-weight:650}
+.truth{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}.truth th,.truth td{padding:9px 12px;text-align:center;border-bottom:1px solid var(--line)}.truth th{background:#edf2fa;font-size:13px}.truth tr:last-child td{border-bottom:0}.truth .out{font-weight:800;background:#f1f7ff}.one{color:var(--green);font-weight:800}.zero{color:#7c8799;font-weight:700}
+.gate-card{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;margin:8px 0;background:#fbfcff}.gate-symbol{width:76px;height:48px;display:grid;place-items:center;background:#eef3ff;border-radius:9px;color:#1d4ea6;font-size:12px;font-weight:900}
+.expr{font:700 18px ui-monospace,Consolas,monospace;background:#f3f6fb;padding:12px;border-radius:9px;overflow-wrap:anywhere}
+.builder{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.builder select{width:auto;min-width:90px}.builder button{flex:0 0 auto}
+.stage{min-height:170px;border:1px dashed #b9c8dd;border-radius:12px;background:linear-gradient(180deg,#fbfdff,#f4f7fc);padding:12px;overflow:auto}
+svg{max-width:100%;height:auto}.legend{display:flex;gap:15px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:8px}
+input[type=checkbox]{width:18px;height:18px;vertical-align:middle}
+.hidden{display:none!important}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.panel{padding:14px}}
+</style>
+</head>
+<body>
+<header><h1>Laboratoire de logique combinatoire</h1><p>Simulateur interactif de portes logiques et de tables de vérité — STI2D</p></header>
+<main>
+<div class="tabs">
+<button class="tab active" data-tab="simple">1 · Une porte logique</button>
+<button class="tab" data-tab="compose">2 · Combiner des opérations</button>
+<button class="tab" data-tab="challenge">3 · Mode exercice</button>
+</div>
+
+<section id="simple">
+<div class="layout">
+<div>
+<div class="panel">
+<h2>Choisir une porte</h2>
+<label for="gate">Opérateur logique</label>
+<select id="gate">
+<option value="AND">ET (AND)</option><option value="OR">OU (OR)</option><option value="NOT">NON (NOT)</option>
+<option value="NAND">NON-ET (NAND)</option><option value="NOR">NON-OU (NOR)</option>
+<option value="XOR">OU exclusif (XOR)</option><option value="XNOR">Équivalence (XNOR)</option>
+</select>
+<div id="inputControls"></div>
+<div class="hint" id="gateExplain"></div>
+</div>
+<div class="panel">
+<h2>Résultat instantané</h2>
+<div class="row"><div class="chip">Sortie S = <strong id="liveOut">0</strong></div><div class="chip">État logique : <strong id="liveText">FAUX</strong></div></div>
+<div class="small">Modifie les entrées pour observer immédiatement l'état de la sortie.</div>
+</div>
+</div>
+<div>
+<div class="panel">
+<h2>Schéma de la porte</h2><div class="stage" id="singleDiagram"></div>
+<div class="legend"><span>● Entrée à 1 : signal actif</span><span>○ Entrée à 0 : signal inactif</span><span>La sortie est recalculée en direct</span></div>
+</div>
+<div class="panel"><h2>Table de vérité</h2><div id="singleTable"></div></div>
+</div>
+</div>
+</section>
+
+<section id="compose" class="hidden">
+<div class="layout">
+<div>
+<div class="panel">
+<h2>Construire une architecture logique</h2>
+<p class="small">Configure trois blocs indépendants. G1 et G2 peuvent travailler en parallèle ; G3 peut ensuite combiner leurs sorties. Une même variable peut alimenter plusieurs portes.</p>
+<div class="gate-card"><div class="gate-symbol">G1</div><div style="flex:1">
+<strong>Branche 1</strong>
+<div class="builder"><select id="g1op"><option>AND</option><option>OR</option><option>NOT</option><option>NAND</option><option>NOR</option><option>XOR</option><option>XNOR</option></select><select id="g1a"><option>A</option><option>B</option><option>C</option><option>D</option></select><select id="g1b"><option>B</option><option>A</option><option>C</option><option>D</option></select></div>
+</div></div>
+<div class="gate-card"><div class="gate-symbol">G2</div><div style="flex:1">
+<strong>Branche 2</strong>
+<div class="builder"><select id="g2op"><option>OR</option><option>AND</option><option>NOT</option><option>NAND</option><option>NOR</option><option>XOR</option><option>XNOR</option></select><select id="g2a"><option>C</option><option>A</option><option>B</option><option>D</option></select><select id="g2b"><option>D</option><option>A</option><option>B</option><option>C</option></select></div>
+</div></div>
+<div class="gate-card"><div class="gate-symbol">G3</div><div style="flex:1">
+<strong>Combinaison finale (facultative)</strong>
+<label style="margin-top:6px"><input type="checkbox" id="enableG3" checked> Activer la porte finale</label>
+<div class="builder"><select id="g3op"><option>AND</option><option>OR</option><option>NOT</option><option>NAND</option><option>NOR</option><option>XOR</option><option>XNOR</option></select><select id="g3a"><option>G1</option><option>G2</option><option>A</option><option>B</option><option>C</option><option>D</option></select><select id="g3b"><option>G2</option><option>G1</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+</div></div>
+<div class="row" style="margin-top:14px"><button class="btn" id="updateExpr">Actualiser le circuit</button><button class="btn secondary" id="resetExpr">Réinitialiser</button></div>
+<div class="hint">Architecture proposée : deux branches en parallèle, puis une porte de regroupement. Tu peux aussi désactiver G3 pour observer directement la sortie de G1.</div>
+</div>
+<div class="panel"><h2>Équation booléenne de sortie</h2><div class="expr" id="expression">S = (A AND B) AND (C OR D)</div><p class="small">L'équation est reconstruite à partir des connexions choisies. Les parenthèses matérialisent les sorties intermédiaires.</p></div>
+</div>
+<div>
+<div class="panel"><h2>Architecture du circuit</h2><div class="stage" id="compoundDiagram"></div><div class="legend"><span>Traits : connexions logiques</span><span>G1 et G2 : branches indépendantes</span><span>G3 : combinaison finale</span></div></div>
+<div class="panel"><h2>Table de vérité complète</h2><div id="compoundTable"></div></div>
+</div>
+</div>
+</section>
+
+<section id="challenge" class="hidden">
+<div class="layout">
+<div>
+<div class="panel">
+<h2>À vous de trouver la sortie</h2>
+<p>Choisis une expression à réaliser, puis complète la table en cliquant sur les sorties. Le simulateur vérifie les réponses.</p>
+<label for="challengeExpr">Expression à étudier</label>
+<select id="challengeExpr"><option value="(A AND B) OR C">(A ET B) OU C</option><option value="A XOR B">A OU exclusif B</option><option value="NOT(A AND B)">NON (A ET B)</option><option value="(A OR B) AND (NOT C)">(A OU B) ET NON C</option></select>
+<button class="btn" id="newChallenge" style="margin-top:12px">Générer l'exercice</button>
+<div class="hint">Conseil : commence par calculer les opérations entre parenthèses, puis la sortie finale.</div>
+</div>
+</div>
+<div class="panel"><h2>Table à compléter</h2><div id="quizTable"></div><div class="row" style="margin-top:12px"><button class="btn" id="checkQuiz">Vérifier</button><span id="quizFeedback" aria-live="polite"></span></div></div>
+</div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const gates=['AND','OR','NOT','NAND','NOR','XOR','XNOR'];
+const descriptions={
+AND:'ET : la sortie vaut 1 uniquement si toutes les entrées valent 1.',
+OR:'OU inclusif : la sortie vaut 1 si au moins une entrée vaut 1.',
+NOT:'NON : la sortie prend l’état inverse de l’entrée.',
+NAND:'NON-ET : inverse du résultat de la porte ET. La sortie vaut 0 uniquement si A et B valent 1.',
+NOR:'NON-OU : inverse du résultat de la porte OU. La sortie vaut 1 uniquement si toutes les entrées valent 0.',
+XOR:'OU exclusif : la sortie vaut 1 si les deux entrées sont différentes.',
+XNOR:'Équivalence : la sortie vaut 1 si les deux entrées sont identiques.'
+};
+function calc(op,a,b){switch(op){case'AND':return a&&b;case'OR':return a||b;case'NOT':return !a;case'NAND':return !(a&&b);case'NOR':return !(a||b);case'XOR':return a!==b;case'XNOR':return a===b;}}
+function bit(v){return v?'1':'0'}
+function tableHTML(vars,fn,editable=false,quizKey=''){
+let rows=[];for(let n=0;n<2**vars.length;n++){let vals={};vars.forEach((v,i)=>vals[v]=!!(n&(1<<(vars.length-1-i))));rows.push({vals,out:fn(vals),n})}
+let html='<table class="truth"><thead><tr>'+vars.map(v=>`<th>${v}</th>`).join('')+'<th>S</th></tr></thead><tbody>';
+rows.forEach(r=>{html+='<tr>'+vars.map(v=>`<td class="${r.vals[v]?'one':'zero'}">${bit(r.vals[v])}</td>`).join('');if(editable){html+=`<td><select class="quizAnswer" data-row="${r.n}" style="width:76px;padding:5px"><option value="">?</option><option value="0">0</option><option value="1">1</option></select></td>`}else html+=`<td class="out ${r.out?'one':'zero'}">${bit(r.out)}</td>`;html+='</tr>'});
+return html+'</tbody></table>';
+}
+function drawGate(op,a,b,small=false){
+ const x=180,y=65,w=100,h=82, out=calc(op,a,b);
+ let shape='';
+ if(op==='NOT'){
+  shape=`<path d="M ${x} ${y+8} L ${x} ${y+h-8} L ${x+w-14} ${y+h/2} Z" fill="#e8f0ff" stroke="#2456a4" stroke-width="2.5"/><circle cx="${x+w-8}" cy="${y+h/2}" r="6" fill="white" stroke="#2456a4" stroke-width="2.5"/>`;
+ }else if(op==='AND'||op==='NAND'){
+  shape=`<path d="M ${x} ${y+8} H ${x+42} A 33 33 0 0 1 ${x+42} ${y+h-8} H ${x} Z" fill="#e8f0ff" stroke="#2456a4" stroke-width="2.5"/>`;
+  if(op==='NAND')shape+=`<circle cx="${x+81}" cy="${y+h/2}" r="6" fill="white" stroke="#2456a4" stroke-width="2.5"/>`;
+ }else{
+  shape=`<path d="M ${x} ${y+8} Q ${x+35} ${y+h/2} ${x} ${y+h-8} Q ${x+55} ${y+h-3} ${x+w-5} ${y+h/2} Q ${x+55} ${y+3} ${x} ${y+8} Z" fill="#e8f0ff" stroke="#2456a4" stroke-width="2.5"/>`;
+  if(op==='XOR'||op==='XNOR')shape+=`<path d="M ${x-9} ${y+8} Q ${x+26} ${y+h/2} ${x-9} ${y+h-8}" fill="none" stroke="#2456a4" stroke-width="2.5"/>`;
+  if(op==='NOR'||op==='XNOR')shape+=`<circle cx="${x+w+1}" cy="${y+h/2}" r="6" fill="white" stroke="#2456a4" stroke-width="2.5"/>`;
+ }
+ const inputA=op==='NOT'?`<path d="M 28 ${y+h/2} H ${x}"`: `<path d="M 28 ${y+28} H ${x}"`;
+ let inputs=op==='NOT'
+  ?`${inputA} stroke="${a?'#16834b':'#93a0b2'}" stroke-width="3" stroke-linecap="round"/><text x="20" y="${y+h/2-10}" font-size="13" fill="#17243a">A=${bit(a)}</text>`
+  :`${inputA} stroke="${a?'#16834b':'#93a0b2'}" stroke-width="3" stroke-linecap="round"/><path d="M 28 ${y+58} H ${x}" stroke="${b?'#16834b':'#93a0b2'}" stroke-width="3" stroke-linecap="round"/><text x="20" y="${y+21}" font-size="13" fill="#17243a">A=${bit(a)}</text><text x="20" y="${y+75}" font-size="13" fill="#17243a">B=${bit(b)}</text>`;
+ // Le départ du fil est placé exactement au bord de la bulle d'inversion
+ // ou au bord du symbole pour les portes sans inversion.
+ const outputX = op==='NOT' ? x+w-2
+   : op==='AND' ? x+75
+   : op==='NAND' ? x+87
+   : (op==='NOR'||op==='XNOR') ? x+w+6
+   : x+w-6;
+ const outputY=y+h/2;
+ return `<svg viewBox="0 0 390 205" role="img" aria-label="Schéma de la porte ${op}">${inputs}${shape}<path d="M ${outputX} ${outputY} H 345" stroke="${out?'#16834b':'#93a0b2'}" stroke-width="3" stroke-linecap="round"/><circle cx="345" cy="${outputY}" r="5" fill="${out?'#16834b':'white'}" stroke="${out?'#16834b':'#93a0b2'}" stroke-width="2"/><text x="${x+45}" y="174" text-anchor="middle" font-size="12" font-weight="700" fill="#2456a4">${op}</text><text x="354" y="${outputY-10}" font-size="13" fill="#17243a">S=${bit(out)}</text></svg>`;
+}
+function renderSingle(){
+let op=$('gate').value, a=$('inA')?.checked??true,b=$('inB')?.checked??false;
+$('inputControls').innerHTML=op==='NOT'?`<label><input type="checkbox" id="inA" ${a?'checked':''}> Entrée A = ${bit(a)} <span class="small">(cocher pour passer à 1)</span></label>`:`<label><input type="checkbox" id="inA" ${a?'checked':''}> Entrée A = ${bit(a)}</label><label><input type="checkbox" id="inB" ${b?'checked':''}> Entrée B = ${bit(b)}</label>`;
+$('gateExplain').textContent=descriptions[op];
+let out=calc(op,a,b);$('liveOut').textContent=bit(out);$('liveText').textContent=out?'VRAI':'FAUX';
+$('singleDiagram').innerHTML=drawGate(op,a,b);
+$('singleTable').innerHTML=tableHTML(op==='NOT'?['A']:['A','B'],v=>calc(op,v.A,v.B));
+$('inA').addEventListener('change',renderSingle);if($('inB'))$('inB').addEventListener('change',renderSingle);
+}
+$('gate').addEventListener('change',renderSingle);
+
+function circuitConfig(){
+ const read=id=>$(id).value;
+ return {
+  g1:{op:read('g1op'),a:read('g1a'),b:read('g1b')},
+  g2:{op:read('g2op'),a:read('g2a'),b:read('g2b')},
+  g3:{op:read('g3op'),a:read('g3a'),b:read('g3b'),enabled:$('enableG3').checked}
+ };
+}
+function circuitEval(v,c){
+ const resolve=(key,results)=>key==='G1'?results.g1:key==='G2'?results.g2:v[key];
+ const run=(g,results)=>calc(g.op,resolve(g.a,results),g.op==='NOT'?false:resolve(g.b,results));
+ const results={}; results.g1=run(c.g1,results); results.g2=run(c.g2,results);
+ results.s=c.g3.enabled?run(c.g3,results):results.g1;
+ return results;
+}
+function gateExpr(g,known){
+ const operand=k=>known[k]||k;
+ return g.op==='NOT'?`NOT(${operand(g.a)})`:`(${operand(g.a)} ${g.op} ${operand(g.b)})`;
+}
+function circuitExpressions(c){
+ const e1=gateExpr(c.g1,{}),e2=gateExpr(c.g2,{});
+ const e3=gateExpr(c.g3,{G1:e1,G2:e2});
+ return {e1,e2,e3:c.g3.enabled?e3:e1};
+}
+function drawCircuit(c){
+ const W=760,H=300;
+ const gateGeom=(x,y,op,id)=>{
+  const w=100,h=76, cy=y+h/2;
+  let shape='';
+  if(op==='NOT'){
+   shape=`<path d="M ${x} ${y+9} L ${x} ${y+h-9} L ${x+w-15} ${cy} Z" fill="#eaf1ff" stroke="#2456a4" stroke-width="2.5"/><circle cx="${x+w-8}" cy="${cy}" r="6" fill="#fff" stroke="#2456a4" stroke-width="2.5"/>`;
+  }else if(op==='AND'||op==='NAND'){
+   shape=`<path d="M ${x} ${y+8} H ${x+43} A 30 30 0 0 1 ${x+43} ${y+h-8} H ${x} Z" fill="#eaf1ff" stroke="#2456a4" stroke-width="2.5"/>`;
+   if(op==='NAND') shape+=`<circle cx="${x+80}" cy="${cy}" r="6" fill="#fff" stroke="#2456a4" stroke-width="2.5"/>`;
+  }else{
+   shape=`<path d="M ${x} ${y+8} Q ${x+33} ${cy} ${x} ${y+h-8} Q ${x+54} ${y+h-3} ${x+w-6} ${cy} Q ${x+54} ${y+3} ${x} ${y+8} Z" fill="#eaf1ff" stroke="#2456a4" stroke-width="2.5"/>`;
+   if(op==='XOR'||op==='XNOR') shape+=`<path d="M ${x-9} ${y+8} Q ${x+24} ${cy} ${x-9} ${y+h-8}" fill="none" stroke="#2456a4" stroke-width="2.5"/>`;
+   if(op==='NOR'||op==='XNOR') shape+=`<circle cx="${x+99}" cy="${cy}" r="6" fill="#fff" stroke="#2456a4" stroke-width="2.5"/>`;
+  }
+  const outX=op==='NOT'?x+98:op==='AND'?x+73:op==='NAND'?x+87:(op==='NOR'||op==='XNOR')?x+105:x+94;
+  const in1Y=op==='NOT'?cy:y+25, in2Y=y+51;
+  return {svg:`<g>${shape}<text x="${x+48}" y="${y+h+17}" text-anchor="middle" font-size="11" font-weight="800" fill="#2456a4">${id} · ${op}</text></g>`,in1:{x,y:in1Y},in2:{x,y:in2Y},out:{x:outX,y:cy}};
+ };
+ const line=(d,color='#64748b')=>`<path d="${d}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+ const label=(x,y,t,color='#334155')=>`<text x="${x}" y="${y-5}" font-size="12" font-weight="750" fill="${color}">${t}</text>`;
+ const g1=gateGeom(230,28,c.g1.op,'G1'), g2=gateGeom(230,180,c.g2.op,'G2');
+ let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Architecture du circuit logique avec les portes représentées selon leur symbole normalisé">`;
+ // Les entrées de chaque porte sont tracées séparément et nommées sur chaque fil.
+ const drawInput=(g,which,name,yy)=>{
+  const pin=which===1?g.in1:g.in2;
+  const sourceX=18, elbow=155;
+  if(c[`g${g===g1?1:2}`].op==='NOT' && which===2) return '';
+  return line(`M ${sourceX} ${pin.y} H ${pin.x}`)+label(22,pin.y,name);
+ };
+ svg+=drawInput(g1,1,c.g1.a)+drawInput(g1,2,c.g1.b);
+ svg+=drawInput(g2,1,c.g2.a)+drawInput(g2,2,c.g2.b);
+ svg+=g1.svg+g2.svg;
+ // Sorties G1/G2 vers la porte finale (si activée).
+ if(c.g3.enabled){
+  const g3=gateGeom(535,103,c.g3.op,'G3');
+  const connectFinal=(key,pin)=>{
+   if(key==='G1'||key==='G2'){
+    const src=key==='G1'?g1.out:g2.out;
+    const sy=key==='G1'?g1.out.y:g2.out.y;
+    const mid=key==='G1'?390:430;
+    return line(`M ${src.x} ${sy} H ${mid} V ${pin.y} H ${pin.x}`,'#16834b')+label(mid+5,pin.y,key,'#16834b');
+   }
+   const startY=pin.y;
+   return line(`M 18 ${startY} H ${pin.x}`)+label(22,startY,key);
+  };
+  svg+=connectFinal(c.g3.a,g3.in1);
+  if(c.g3.op!=='NOT') svg+=connectFinal(c.g3.b,g3.in2);
+  svg+=g3.svg;
+  svg+=line(`M ${g3.out.x} ${g3.out.y} H 700`,'#16834b');
+  svg+=`<circle cx="700" cy="${g3.out.y}" r="4.5" fill="#16834b"/><text x="710" y="${g3.out.y+4}" font-size="14" font-weight="850" fill="#16834b">S</text>`;
+ }else{
+  svg+=line(`M ${g1.out.x} ${g1.out.y} H 700`,'#16834b');
+  svg+=`<circle cx="700" cy="${g1.out.y}" r="4.5" fill="#16834b"/><text x="710" y="${g1.out.y+4}" font-size="14" font-weight="850" fill="#16834b">S</text>`;
+  svg+=`<text x="535" y="150" font-size="12" fill="#64748b">G3 désactivée</text>`;
+ }
+ svg+='</svg>';
+ $('compoundDiagram').innerHTML=svg+`<div class="small">Chaque entrée est identifiée sur son propre conducteur. Les symboles reprennent la forme normalisée des portes ET, OU, NON et de leurs variantes inversées ou exclusives.</div>`;
+}
+function updateCompound(){
+ const c=circuitConfig(),e=circuitExpressions(c);
+ $('expression').textContent='S = '+e.e3;
+ $('compoundTable').innerHTML=tableHTML(['A','B','C','D'],v=>circuitEval(v,c).s);
+ drawCircuit(c);
+}
+$('updateExpr').addEventListener('click',updateCompound);
+$('resetExpr').addEventListener('click',()=>{
+ $('g1op').value='AND';$('g1a').value='A';$('g1b').value='B';
+ $('g2op').value='OR';$('g2a').value='C';$('g2b').value='D';
+ $('g3op').value='AND';$('g3a').value='G1';$('g3b').value='G2';$('enableG3').checked=true;
+ updateCompound();
+});
+$('enableG3').addEventListener('change',updateCompound);
+['g1op','g1a','g1b','g2op','g2a','g2b','g3op','g3a','g3b'].forEach(id=>$(id).addEventListener('change',updateCompound));
+
+const quizDefs={
+'(A AND B) OR C':{vars:['A','B','C'],fn:v=>(v.A&&v.B)||v.C},
+'A XOR B':{vars:['A','B'],fn:v=>v.A!==v.B},
+'NOT(A AND B)':{vars:['A','B'],fn:v=>!(v.A&&v.B)},
+'(A OR B) AND (NOT C)':{vars:['A','B','C'],fn:v=>(v.A||v.B)&&!v.C}
+};
+function newQuiz(){let q=quizDefs[$('challengeExpr').value];$('quizTable').innerHTML=tableHTML(q.vars,q.fn,true);$('quizFeedback').textContent='';}
+$('newChallenge').addEventListener('click',newQuiz);
+$('checkQuiz').addEventListener('click',()=>{let q=quizDefs[$('challengeExpr').value],correct=0,total=2**q.vars.length;document.querySelectorAll('.quizAnswer').forEach(el=>{let n=Number(el.dataset.row),vals={};q.vars.forEach((v,i)=>vals[v]=!!(n&(1<<(q.vars.length-1-i))));let expected=bit(q.fn(vals));el.style.borderColor=el.value===expected?'#16834b':'#c53c45';if(el.value===expected)correct++;});$('quizFeedback').textContent=`${correct} / ${total} réponses correctes`;$('quizFeedback').style.color=correct===total?'#16834b':'#a96608';});
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b===btn));['simple','compose','challenge'].forEach(id=>$(id).classList.toggle('hidden',id!==btn.dataset.tab));}));
+renderSingle();updateCompound();newQuiz();
+</script>
+</body></html>

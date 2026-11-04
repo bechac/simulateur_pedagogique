@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratoire de conversion — Bases 2, 10 et 16</title>
+<style>
+:root{--bg:#f3f6fb;--panel:#fff;--ink:#172033;--muted:#64748b;--line:#dce4ef;--blue:#2563eb;--blue2:#dbeafe;--green:#15803d;--amber:#b45309;--red:#b91c1c;--shadow:0 8px 24px rgba(25,45,80,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:linear-gradient(120deg,#13294b,#2456a6);color:white;padding:26px max(20px,calc((100% - 1200px)/2))}
+header h1{margin:0 0 6px;font-size:clamp(24px,4vw,34px)}header p{margin:0;color:#dbeafe;max-width:850px}
+main{max-width:1200px;margin:22px auto;padding:0 18px 40px}.toolbar,.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
+.toolbar{display:flex;gap:14px;align-items:end;flex-wrap:wrap}.field{display:flex;flex-direction:column;gap:5px;min-width:130px;flex:1}label{font-weight:650;font-size:13px;color:#334155}input,select,button{font:inherit}input[type=text],input[type=number],select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px 11px;background:white;color:var(--ink)}input:focus,select:focus{outline:3px solid #bfdbfe;border-color:var(--blue)}
+button{border:0;border-radius:9px;padding:10px 14px;background:var(--blue);color:white;font-weight:650;cursor:pointer}button:hover{filter:brightness(.95)}button.secondary{background:#e8eef8;color:#1e3a5f}button.ghost{background:white;color:#334155;border:1px solid var(--line)}button:disabled{opacity:.45;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.panel h2{font-size:19px;margin:0 0 12px}.panel h3{font-size:15px;margin:16px 0 8px}.sub{color:var(--muted);font-size:13px;margin-top:-6px}.converter{display:grid;grid-template-columns:1fr;gap:11px}.convert-row{display:grid;grid-template-columns:90px 1fr;align-items:center;gap:10px}.convert-row strong{font-size:13px;color:#475569}.convert-row input{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:16px;letter-spacing:.3px}
+.status{margin-top:10px;padding:9px 11px;border-radius:9px;background:#eff6ff;color:#1e40af;font-size:13px}.status.error{background:#fef2f2;color:var(--red)}.status.ok{background:#f0fdf4;color:var(--green)}
+.bit-tools{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.bit-groups{display:flex;flex-wrap:wrap;gap:12px}.byte{display:flex;flex-direction:column;gap:5px;padding:8px;background:#f8fafc;border:1px solid var(--line);border-radius:10px}.byte-label{text-align:center;color:var(--muted);font-size:11px;font-weight:700}.bits{display:flex;gap:4px}.bit{width:38px;height:44px;padding:0;background:white;color:#334155;border:1px solid #cbd5e1;border-radius:7px;font-family:ui-monospace,monospace;font-size:18px}.bit.on{background:#1d4ed8;color:white;border-color:#1d4ed8}.bit:hover{filter:brightness(.96)}.weights{display:flex;gap:4px;margin-top:5px}.weight{width:38px;text-align:center;font-size:10px;color:#64748b;overflow:hidden}.weight:first-child{color:#1d4ed8;font-weight:700}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:8px 9px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}th{background:#f8fafc;color:#475569;font-weight:700}td:first-child,th:first-child{text-align:left}.equation{padding:12px;background:#f8fafc;border-radius:10px;font-family:ui-monospace,monospace;overflow-wrap:anywhere}.steps{display:grid;gap:8px}.step{padding:10px 12px;border-left:3px solid #93c5fd;background:#f8fafc;border-radius:0 8px 8px 0}.step b{color:#1d4ed8}
+.pills{display:flex;gap:7px;flex-wrap:wrap}.pill{background:#eff6ff;color:#1e40af;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:650}.limits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.limit{background:#f8fafc;border:1px solid var(--line);padding:11px;border-radius:10px}.limit small{display:block;color:var(--muted)}.limit b{font-family:ui-monospace,monospace;overflow-wrap:anywhere}
+.exercise-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.feedback{padding:10px;border-radius:9px;margin-top:10px;background:#f1f5f9}.feedback.good{background:#f0fdf4;color:#166534}.feedback.bad{background:#fef2f2;color:#991b1b}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.convert-row{grid-template-columns:72px 1fr}.bit{width:31px;height:39px}.weight{width:31px}.toolbar .field{min-width:110px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Laboratoire de conversion numérique</h1>
+  <p>Comprendre et manipuler les bases 2, 10 et 16 : représentation des nombres, poids des bits, octets, signé et non signé.</p>
+</header>
+<main>
+  <section class="toolbar">
+    <div class="field"><label for="nbits">Nombre de bits</label><select id="nbits"><option>4</option><option selected>8</option><option>12</option><option>16</option><option>24</option><option>32</option><option>64</option><option value="custom">Personnalisé…</option></select></div>
+    <div class="field" id="customWrap" style="display:none"><label for="customBits">Bits personnalisés (1 à 64)</label><input id="customBits" type="number" min="1" max="64" value="10"></div>
+    <div class="field"><label for="signed">Interprétation</label><select id="signed"><option value="unsigned">Non signé (unsigned)</option><option value="signed">Signé – complément à deux</option></select></div>
+    <div class="field"><label for="grouping">Affichage binaire</label><select id="grouping"><option value="4" selected>Groupes de 4 bits</option><option value="8">Groupes de 8 bits</option><option value="0">Sans séparation</option></select></div>
+    <button id="reset" class="secondary">Réinitialiser</button>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>1. Convertisseur universel</h2>
+      <p class="sub">Modifie une valeur : les deux autres bases sont actualisées automatiquement.</p>
+      <div class="converter">
+        <div class="convert-row"><strong>Décimal</strong><input id="dec" type="text" value="42" inputmode="numeric" aria-label="Valeur décimale"></div>
+        <div class="convert-row"><strong>Binaire</strong><input id="bin" type="text" value="00101010" spellcheck="false" aria-label="Valeur binaire"></div>
+        <div class="convert-row"><strong>Hexadécimal</strong><input id="hex" type="text" value="2A" spellcheck="false" aria-label="Valeur hexadécimale"></div>
+      </div>
+      <div id="status" class="status" role="status">42 en décimal = 0010 1010 en binaire = 2A en hexadécimal.</div>
+      <h3>Capacité de représentation</h3>
+      <div class="limits">
+        <div class="limit"><small>Valeur minimale</small><b id="minVal">0</b></div>
+        <div class="limit"><small>Valeur maximale</small><b id="maxVal">255</b></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>2. Manipuler les bits</h2>
+      <p class="sub">Clique sur un bit pour le passer de 0 à 1 ou de 1 à 0. Le résultat est recalculé.</p>
+      <div class="bit-tools"><div class="pills"><span class="pill" id="bitCount">8 bits</span><span class="pill" id="byteCount">1 octet</span></div><div><button id="allZero" class="ghost">Tout à 0</button> <button id="allOne" class="ghost">Tout à 1</button></div></div>
+      <div id="bitDisplay" class="bit-groups"></div>
+      <h3>Lecture de la représentation</h3>
+      <div class="equation" id="bitEquation">32 + 8 + 2 = 42</div>
+    </section>
+
+    <section class="panel">
+      <h2>3. Décomposition et poids binaires</h2>
+      <p class="sub">Chaque position possède un poids égal à une puissance de 2.</p>
+      <div class="table-wrap"><table><thead><tr><th>Position</th><th>Bit</th><th>Poids (2ⁿ)</th><th>Contribution</th></tr></thead><tbody id="weightTable"></tbody></table></div>
+      <div class="equation" id="sumEquation" style="margin-top:10px">42 = 32 + 8 + 2</div>
+    </section>
+
+    <section class="panel">
+      <h2>4. Correspondance binaire / hexadécimal</h2>
+      <p class="sub">Un chiffre hexadécimal représente exactement 4 bits (un quartet).</p>
+      <div id="hexGroups" class="steps"></div>
+      <h3>Repère des chiffres hexadécimaux</h3>
+      <div class="table-wrap"><table><thead><tr><th>Décimal</th><th>Hexa</th><th>Binaire</th><th>Décimal</th><th>Hexa</th><th>Binaire</th></tr></thead><tbody id="hexRef"></tbody></table></div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>5. Méthode de conversion pas à pas</h2>
+    <div class="grid">
+      <div><h3>Décimal vers binaire</h3><div id="decSteps" class="steps"></div></div>
+      <div><h3>Binaire vers décimal</h3><div id="binSteps" class="steps"></div></div>
+    </div>
+    <div id="signedInfo" class="status" style="margin-top:14px"></div>
+  </section>
+
+  <section class="panel">
+    <h2>6. Entraînement</h2>
+    <p class="sub">Génère une question adaptée au nombre de bits et au mode sélectionnés. Saisis la réponse dans la base demandée.</p>
+    <div class="exercise-actions"><button id="newExercise">Nouvel exercice</button><button id="showCorrection" class="secondary">Afficher la correction</button></div>
+    <div class="equation" id="question">Convertis 42 en binaire.</div>
+    <div class="convert-row" style="margin-top:12px"><strong id="answerLabel">Réponse</strong><input id="answer" type="text" placeholder="Saisis ta réponse"></div>
+    <div class="exercise-actions"><button id="checkAnswer">Vérifier ma réponse</button></div>
+    <div id="exerciseFeedback" class="feedback">Choisis « Nouvel exercice » pour commencer.</div>
+  </section>
+  <footer>Laboratoire pédagogique STI2D – conversions numériques – fonctionnement autonome, sans connexion Internet.</footer>
+</main>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+let n = 8, signed = false, raw = 42n, exercise = null, lastSource = "dec";
+const pow2 = k => 1n << BigInt(k);
+const mask = () => pow2(n)-1n;
+const minValue = () => signed ? -pow2(n-1) : 0n;
+const maxValue = () => signed ? pow2(n-1)-1n : mask();
+const interpret = r => signed && (r & pow2(n-1)) ? r-pow2(n) : r;
+const encode = v => ((v % pow2(n)) + pow2(n)) % pow2(n);
+const grouped = (s, size) => size ? s.replace(new RegExp(`(.{${size}})(?=.)`,'g'),'$1 ') : s;
+const fmt = v => v.toString();
+function parseBase(s,base){
+  s=s.trim().replace(/[\s_]/g,'').replace(/^0[bBxX]/,'');
+  if(!s) throw Error("Saisis une valeur.");
+  const valid=base===2?/^[01]+$/:base===16?/^[0-9a-fA-F]+$/:/^-?\d+$/;
+  if(!valid.test(s)) throw Error(base===2?"Le binaire accepte uniquement 0 et 1.":base===16?"L'hexadécimal accepte les chiffres 0 à 9 et les lettres A à F.":"Saisis un entier décimal.");
+  return base===10?BigInt(s):BigInt(base===2?"0b"+s:"0x"+s);
+}
+function setStatus(msg,type=""){ $("status").textContent=msg;$("status").className="status "+type; }
+function updateFromRaw(){
+  raw &= mask(); const val=interpret(raw);
+  $("dec").value=fmt(val);
+  const b=raw.toString(2).padStart(n,"0");
+  $("bin").value=grouped(b,Number($("grouping").value));
+  $("hex").value=raw.toString(16).toUpperCase().padStart(Math.ceil(n/4),"0");
+  setStatus(`${val} en décimal = ${grouped(b,4)} en binaire = ${$("hex").value} en hexadécimal.`,"ok");
+  renderAll();
+}
+function applyValue(v,source){
+  if(v<minValue()||v>maxValue()) throw Error(`Valeur hors limites : de ${minValue()} à ${maxValue()} pour ${n} bits dans ce mode.`);
+  raw=encode(v);lastSource=source;updateFromRaw();
+}
+function applyRaw(v,source){
+  if(v>mask()) throw Error(`Cette valeur nécessite plus de ${n} bits.`);
+  raw=v;lastSource=source;updateFromRaw();
+}
+function renderBits(){
+  const s=raw.toString(2).padStart(n,"0"), host=$("bitDisplay");host.innerHTML="";
+  const group=Number($("grouping").value)||n;
+  const chunks=[];for(let i=0;i<n;i+=group)chunks.push({start:i,end:Math.min(i+group,n)});
+  chunks.forEach((c,idx)=>{
+    const wrap=document.createElement("div");wrap.className="byte";
+    const label=document.createElement("div");label.className="byte-label";label.textContent=`${n-c.start} à ${n-c.end+1}`;wrap.append(label);
+    const bits=document.createElement("div");bits.className="bits";
+    for(let j=c.start;j<c.end;j++){
+      const power=n-1-j, bit=s[j]==="1";const btn=document.createElement("button");
+      btn.className="bit"+(bit?" on":"");btn.textContent=s[j];btn.title=`Bit ${power}, poids ${pow2(power)}`;
+      btn.setAttribute("aria-label",`Bit ${power}, valeur ${s[j]}`);
+      btn.addEventListener("click",()=>{raw^=pow2(power);updateFromRaw();});bits.append(btn);
+    }
+    wrap.append(bits);
+    const weights=document.createElement("div");weights.className="weights";
+    for(let j=c.start;j<c.end;j++){const w=document.createElement("div");w.className="weight";w.textContent=pow2(n-1-j).toString();weights.append(w);}
+    wrap.append(weights);host.append(wrap);
+  });
+  $("bitCount").textContent=`${n} bits`;$("byteCount").textContent=`${(n/8).toFixed(n%8?1:0)} ${n===8?"octet":"octet(s)"} (taille)`;
+}
+function renderWeights(){
+  const s=raw.toString(2).padStart(n,"0"), body=$("weightTable");body.innerHTML="";
+  let terms=[];
+  for(let i=0;i<n;i++){
+    const p=n-1-i,b=s[i],w=pow2(p),c=b==="1"?w:0n;if(c)terms.push(w.toString());
+    const tr=document.createElement("tr");
+    [String(p),b,w.toString(),c.toString()].forEach((v,j)=>{const td=document.createElement("td");td.textContent=v;if(j===1)td.style.fontWeight="700";tr.append(td);});
+    body.append(tr);
+  }
+  const val=interpret(raw);
+  $("bitEquation").textContent=s.split("").map((b,i)=>b==="1"?pow2(n-1-i).toString():null).filter(Boolean).join(" + ")||"Tous les bits sont à 0";
+  $("sumEquation").textContent=signed?`Valeur interprétée en complément à deux : ${val}`:`${val} = ${terms.length?terms.join(" + "):"0"}`;
+}
+function renderHex(){
+  const b=raw.toString(2).padStart(Math.ceil(n/4)*4,"0"), groups=b.match(/.{4}/g)||[], host=$("hexGroups");host.innerHTML="";
+  groups.forEach((g,i)=>{const val=parseInt(g,2).toString(16).toUpperCase();const d=document.createElement("div");d.className="step";d.innerHTML=`<b>Quartet ${i+1} :</b> ${g}₂ = ${val}₁₆ <span style="color:#64748b">(${parseInt(g,2)} en décimal)</span>`;host.append(d);});
+}
+function renderMethods(){
+  const val=interpret(raw), b=raw.toString(2).padStart(n,"0");
+  const decHost=$("decSteps");decHost.innerHTML="";
+  let x=val, lines=[];
+  if(x===0n)lines.push("0 ÷ 2 = 0, reste 0");
+  else {while(x>0n){let q=x/2n,r=x%2n;lines.push(`${x} ÷ 2 = ${q}, reste ${r}`);x=q;}}
+  if(val<0n) lines=["Pour un nombre négatif, on encode sa représentation en complément à deux sur "+n+" bits."];
+  lines.forEach((t,i)=>{const d=document.createElement("div");d.className="step";d.textContent=t;decHost.append(d);});
+  if(val>=0n){const d=document.createElement("div");d.className="step";d.innerHTML=`<b>Lecture des restes de bas en haut :</b> ${b}`;decHost.append(d);}
+  const binHost=$("binSteps");binHost.innerHTML="";let terms=[];
+  for(let i=0;i<n;i++)if(b[i]==="1")terms.push(`2<sup>${n-1-i}</sup>`);
+  const d=document.createElement("div");d.className="step";d.innerHTML=`${b}₂ = ${terms.length?terms.join(" + "):"0"} = <b>${val}</b>₁₀`;binHost.append(d);
+  const info=$("signedInfo");
+  if(signed){const sign=(raw&pow2(n-1))?"1 (nombre négatif)":"0 (nombre positif ou nul)";info.textContent=`Complément à deux : le bit de poids fort vaut ${sign}. La valeur décimale interprétée est ${val}. La suite de bits reste la représentation brute.`;}
+  else info.textContent=`Mode non signé : tous les bits contribuent positivement. La plage représentable est de 0 à ${mask()}.`;
+}
+function renderLimits(){$("minVal").textContent=fmt(minValue());$("maxVal").textContent=fmt(maxValue());}
+function renderAll(){renderBits();renderWeights();renderHex();renderMethods();renderLimits();}
+function configure(){
+  const sel=$("nbits").value;$("customWrap").style.display=sel==="custom"?"flex":"none";
+  n=sel==="custom"?Math.max(1,Math.min(64,Number($("customBits").value)||8)):Number(sel);
+  signed=$("signed").value==="signed";
+  const v=interpret(raw);if(v<minValue()||v>maxValue())raw=encode(0n);updateFromRaw();
+}
+function doInput(id,base){
+  try{const v=parseBase($(id).value,base);if(base===10)applyValue(v,id);else applyRaw(v,id);}
+  catch(e){setStatus(e.message,"error");}
+}
+$("dec").addEventListener("change",()=>doInput("dec",10));
+$("bin").addEventListener("change",()=>doInput("bin",2));
+$("hex").addEventListener("change",()=>doInput("hex",16));
+$("grouping").addEventListener("change",updateFromRaw);
+$("nbits").addEventListener("change",configure);$("customBits").addEventListener("change",configure);$("signed").addEventListener("change",configure);
+$("allZero").addEventListener("click",()=>{raw=0n;updateFromRaw();});
+$("allOne").addEventListener("click",()=>{raw=mask();updateFromRaw();});
+$("reset").addEventListener("click",()=>{raw=0n;applyValue(0n,"dec");});
+function newExercise(){
+  const modes=["binaire","décimal","hexadécimal"],from=modes[Math.floor(Math.random()*3)],to=modes[(modes.indexOf(from)+1+Math.floor(Math.random()*2))%3];
+  const range=maxValue()-minValue()+1n;let v=minValue()+BigInt(Math.floor(Math.random()*Number(range>1000000n?1000000n:range)));
+  if(range>1000000n)v=minValue()+BigInt(Math.floor(Math.random()*1000000));
+  const r=encode(v), b=r.toString(2).padStart(n,"0"),h=r.toString(16).toUpperCase().padStart(Math.ceil(n/4),"0");
+  const source=from==="binaire"?grouped(b,4):from==="hexadécimal"?h:v.toString();
+  const answer=to==="binaire"?b:to==="hexadécimal"?h:v.toString();
+  exercise={from,to,source,answer};$("question").textContent=`Convertis ${source} en ${to}.`; $("answerLabel").textContent=`Réponse (${to})`;$("answer").value="";$("exerciseFeedback").textContent="À toi de jouer."; $("exerciseFeedback").className="feedback";
+}
+function checkExercise(reveal=false){
+  if(!exercise){$("exerciseFeedback").textContent="Génère d'abord un exercice.";return;}
+  if(reveal){$("exerciseFeedback").textContent=`Correction : ${exercise.answer} (${exercise.to}).`; $("exerciseFeedback").className="feedback";return;}
+  try{
+    const base=exercise.to==="binaire"?2:exercise.to==="hexadécimal"?16:10;
+    let got=parseBase($("answer").value,base),expected=parseBase(exercise.answer,base);
+    const ok=got===expected;
+    $("exerciseFeedback").textContent=ok?"Bonne réponse. La conversion est correcte.":`Ce n'est pas encore la bonne réponse. Vérifie les poids des bits et les regroupements par 4.`;
+    $("exerciseFeedback").className="feedback "+(ok?"good":"bad");
+  }catch(e){$("exerciseFeedback").textContent=e.message;$("exerciseFeedback").className="feedback bad";}
+}
+$("newExercise").addEventListener("click",newExercise);$("checkAnswer").addEventListener("click",()=>checkExercise());$("showCorrection").addEventListener("click",()=>checkExercise(true));
+const ref=$("hexRef");for(let i=0;i<8;i++){const tr=document.createElement("tr");[i,i.toString(16).toUpperCase(),i.toString(2).padStart(4,"0"),i+8,(i+8).toString(16).toUpperCase(),(i+8).toString(2).padStart(4,"0")].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.append(td);});ref.append(tr);}
+updateFromRaw();
+})();
+</script>
+</body>
+</html>
