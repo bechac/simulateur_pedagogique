@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Plateforme personnelle de simulations et de ressources pédagogiques pour le BTS Métiers de l’Eau.">
+<title>Simulateur pédagogique – BTS Métiers de l’Eau</title>
+<style>
+:root{--bg:#081522;--bg2:#0d2031;--panel:#10283b;--panel2:#14334a;--ink:#edf6fb;--muted:#a9bdca;--line:#29485d;--cyan:#56c5d0;--mint:#79d9b5;--blue:#63a9e8;--gold:#e9bd72}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;position:relative;isolation:isolate;overflow-x:hidden;background:
+      radial-gradient(ellipse at 12% 4%,rgba(34,128,153,.30) 0,transparent 34%),
+      radial-gradient(ellipse at 88% 38%,rgba(22,100,139,.22) 0,transparent 38%),
+      linear-gradient(160deg,#071724 0%,#0b2638 52%,#081925 100%);
+      color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.20;
+  background-image:
+    radial-gradient(ellipse at 50% 100%,transparent 0 42%,rgba(91,190,204,.22) 42.2% 42.6%,transparent 42.8%),
+    radial-gradient(ellipse at 50% 100%,transparent 0 54%,rgba(91,190,204,.15) 54.2% 54.5%,transparent 54.8%),
+    radial-gradient(ellipse at 50% 100%,transparent 0 66%,rgba(91,190,204,.10) 66.2% 66.5%,transparent 66.8%);
+  background-size:100% 580px;background-position:center bottom;background-repeat:no-repeat}
+body:after{content:"";position:absolute;z-index:-1;pointer-events:none;left:-8%;right:-8%;top:350px;height:250px;opacity:.22;
+  background:repeating-radial-gradient(ellipse at 50% 100%,transparent 0 34px,rgba(72,177,194,.16) 35px 37px,transparent 38px 68px);
+  filter:blur(1px);mask-image:linear-gradient(to bottom,transparent,black 35%,transparent)}a{color:inherit;text-decoration:none}.wrap{width:min(1080px,calc(100% - 36px));margin:auto}
+header{padding:21px 0 15px;border-bottom:1px solid #29485d88}.top{display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{display:flex;align-items:center;gap:12px;font-weight:750;letter-spacing:.2px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(140deg,var(--cyan),var(--mint));display:grid;place-items:center;color:#092032;font-size:21px;font-weight:900}nav{display:flex;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:13px}nav a:hover{color:var(--cyan)}
+.hero{padding:58px 0 32px;max-width:820px}.eyebrow{color:var(--mint);font-size:12px;text-transform:uppercase;letter-spacing:2px;font-weight:800}h1{font-size:clamp(35px,6vw,59px);line-height:1.04;letter-spacing:-1.8px;margin:12px 0 17px}.hero p{font-size:17px;color:var(--muted);max-width:720px;margin:0}.hero-tags{display:flex;gap:9px;flex-wrap:wrap;margin-top:23px}.tag{border:1px solid var(--line);background:#10283b99;border-radius:99px;padding:7px 12px;color:#c7dbe5;font-size:12px}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:26px 0 15px}.section-head h2{font-size:23px;margin:0;letter-spacing:-.4px}.section-head p{margin:0;color:var(--muted);font-size:13px}.domains{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.card{background:linear-gradient(145deg,#10283beF,#0d2031);border:1px solid var(--line);border-radius:17px;padding:21px;min-height:210px;display:flex;flex-direction:column;box-shadow:0 12px 35px #0002}.icon{width:43px;height:43px;border-radius:13px;background:#173b50;color:var(--cyan);display:grid;place-items:center;font-size:22px;margin-bottom:15px}.card h3{font-size:18px;margin:0 0 7px}.card p{color:var(--muted);font-size:13px;margin:0 0 17px}.action{margin-top:auto;display:inline-flex;align-items:center;gap:8px;color:var(--mint);font-size:13px;font-weight:700}.status{margin-top:auto;display:inline-flex;align-self:flex-start;border:1px solid #526779;border-radius:99px;padding:5px 10px;color:#c0ccd4;font-size:11px}.tool-links{display:grid;gap:8px;margin-top:auto}.tool-links a{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 11px;border:1px solid #31566b;border-radius:9px;background:#143247;color:#d8edf5;font-size:12px;font-weight:650;transition:background .18s,border-color .18s}.tool-links a:hover{background:#19445a;border-color:var(--cyan)}.tool-links a span{color:var(--mint);white-space:nowrap}.card:has(.tool-links){min-height:250px}.resources{margin:25px 0 35px;padding:22px;border:1px solid var(--line);border-radius:17px;background:#10283bc9;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}.resources h2{margin:0 0 6px;font-size:20px}.resources p{margin:0;color:var(--muted);font-size:13px;max-width:700px}.resource-pill{display:inline-flex;align-items:center;gap:8px;border:1px solid #3b6378;border-radius:10px;padding:11px 14px;color:#d8edf5;font-size:13px;background:#16384c}
+footer{border-top:1px solid #29485d88;padding:20px 0 30px;color:#819aa9;font-size:12px}footer strong{color:#c5d7e0}footer p{margin:5px 0}.credits{max-width:850px}.credits small{color:#91a8b6}@media(max-width:760px){.domains{grid-template-columns:1fr}.resources{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}nav{gap:14px}.hero{padding-top:42px}}
+</style>
+</head>
+<body>
+<header><div class="wrap top"><a class="brand" href="./"><span class="logo">SP</span><span>Simulateur pédagogique</span></a><nav aria-label="Navigation principale"><a href="#domaines">Domaines</a><a href="#ressources">Ressources</a><a href="#apropos">À propos</a></nav></div></header>
+<main class="wrap">
+<section class="hero"><div class="eyebrow">BTS Métiers de l’Eau</div><h1>Comprendre<br>Simuler<br>Expérimenter</h1><p>Un espace pédagogique personnel pour explorer les phénomènes liés au traitement de l’eau, dimensionner des installations et comprendre le fonctionnement des systèmes techniques grâce à des simulations interactives.</p><div class="hero-tags"><span class="tag">Simulations interactives</span><span class="tag">Démarches de dimensionnement</span><span class="tag">Ressources pédagogiques</span></div></section>
+<section id="domaines"><div class="section-head"><h2>Explorer les domaines</h2><p>Les outils seront ajoutés progressivement.</p></div>
+<div class="domains">
+<article class="card"><div class="icon">↗</div><h3>Hydraulique</h3><p>Débit, relevage des effluents, vis d’Archimède et dimensionnement des installations de pompage.</p><div class="tool-links">
+<a href="bts-metiers-eau/pompage/">Dimensionnement d'une installation de pompage <span>Ouvrir →</span></a>
+<a href="bts-metiers-eau/hydraulique/poste-relevage/">Poste de relevage — cuve et pompes <span>Ouvrir →</span></a>
+<a href="bts-metiers-eau/hydraulique/vis-archimede/">Dimensionnement d'une vis d'Archimède <span>Ouvrir →</span></a>
+</div></article>
+<article class="card"><div class="icon">≋</div><h3>Process et procédés de traitement</h3><p>Visualiser le dégrillage et la séparation des matières en suspension en décantation classique ou lamellaire.</p><div class="tool-links"><a href="bts-metiers-eau/process/degrilleur/">Dégrilleur automatique <span>Ouvrir →</span></a><a href="bts-metiers-eau/process/decantation/">Décantation en bassin rectangulaire <span>Ouvrir →</span></a><a href="bts-metiers-eau/process/decanteur-lamellaire/">Décantation classique et lamellaire <span>Ouvrir →</span></a></div></article>
+<article class="card"><div class="icon">⌁</div><h3>Régulation et asservissement</h3><p>Étudier la commande tout ou rien, l’hystérésis et le réglage d’une boucle PID.</p><div class="tool-links"><a href="bts-metiers-eau/regulation/tor/">Régulation tout ou rien (TOR) <span>Ouvrir →</span></a><a href="bts-metiers-eau/regulation/pid/">Régulation PID <span>Ouvrir →</span></a></div></article>
+</div></section>
+<section id="ressources" class="resources"><div><h2>Ressources pédagogiques</h2><p>Des cours, fiches méthodes et bloc-notes OneNote pourront être associés à chaque domaine. Les documents resteront hébergés dans l’espace documentaire choisi ; la plateforme accueillera simplement les liens de consultation, avec des droits d’accès configurés en lecture seule lorsque c’est possible.</p></div><span class="resource-pill">Cours · fiches · OneNote</span></section>
+</main>
+<footer><div class="wrap credits" id="apropos"><strong>Simulateur pédagogique</strong><p>Conception pédagogique et direction du projet : Bertrand CHACORNAC.</p><p>Développement réalisé avec l’assistance d’outils d’intelligence artificielle générative. Les choix pédagogiques, les adaptations, les tests et la validation sont réalisés sous la responsabilité du concepteur.</p><small>© 2026 Bertrand CHACORNAC — Projet personnel. Les droits éventuels sur les composants tiers et les contenus générés ou utilisés restent soumis à leurs conditions propres.</small></div></footer>
+</body></html>

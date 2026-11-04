@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulateur de dimensionnement – Vis d'Archimède</title>
+<style>
+:root{--navy:#14394f;--blue:#168ac5;--ink:#193344;--muted:#617786;--line:#dce5eb;--bg:#eef3f7;--teal:#36a8b8;--gold:#c99d4d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,Segoe UI,Arial,sans-serif}
+header{background:var(--navy);color:white;padding:22px max(20px,calc((100% - 1450px)/2))}header .eyebrow{font-size:11px;letter-spacing:.14em;color:#a9dbe7;font-weight:800;text-transform:uppercase}h1{font-size:clamp(22px,3vw,32px);margin:4px 0}header p{margin:0;color:#d5e5ec;max-width:950px}
+main{max-width:1450px;margin:20px auto;padding:0 16px 36px;display:grid;grid-template-columns:340px minmax(0,1fr);gap:17px}
+.panel{background:white;border:1px solid var(--line);border-radius:15px;box-shadow:0 5px 18px #183b5010}.controls{padding:17px;height:max-content}.section-title{font-size:16px;font-weight:800;margin:0 0 12px}
+.group-title{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#1680a9;font-weight:800;margin:16px 0 4px}
+.control{padding:9px 0;border-top:1px solid #edf1f4}.control label{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:700}.control output{color:#087eae;font-variant-numeric:tabular-nums}input[type=range]{width:100%;accent-color:#168ac5;margin:9px 0 1px}.hint{font-size:10px;color:var(--muted)}
+.actions{display:flex;gap:8px;margin-top:14px}.btn{border:0;border-radius:9px;padding:10px 12px;font-weight:750;cursor:pointer}.primary{background:#147fae;color:white}.secondary{background:#e9f1f5;color:#24485b}
+.content{display:grid;gap:16px;min-width:0}.visual{padding:15px 17px 10px;overflow:hidden}.topline{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.status{font-size:11px;font-weight:800;background:#e8f6f1;color:#16836c;padding:5px 10px;border-radius:99px}
+.scene{display:block;width:100%;height:auto}.legend{display:flex;gap:14px;flex-wrap:wrap;padding:3px 8px 7px;font-size:11px;color:var(--muted)}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.metric{padding:12px}.metric small{display:block;color:var(--muted);font-size:10px;font-weight:750}.metric strong{display:block;font-size:21px;margin-top:4px;font-variant-numeric:tabular-nums}.metric em{font-style:normal;color:var(--muted);font-size:10px}
+.results{padding:16px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.result{background:#f4f8fa;border-radius:9px;padding:10px}.result span{display:block;color:var(--muted);font-size:10px}.result b{font-size:16px;font-variant-numeric:tabular-nums}
+.check{margin-top:10px;padding:10px 12px;border-radius:9px;font-size:12px}.ok{background:#e8f6f1;color:#176b58}.warn{background:#fff2e4;color:#945812}.bad{background:#fdeeee;color:#a43e3e}
+.annex{padding:16px}.annex table{width:100%;border-collapse:collapse;font-size:12px}.annex th,.annex td{padding:7px 8px;border-bottom:1px solid #e8eef2;text-align:right}.annex th:first-child,.annex td:first-child{text-align:left}.annex th{color:#5b7180;background:#f5f8fa}
+.note{padding:13px 16px;color:#536a79;font-size:11px}.note b{color:#28485b}
+#flightPath{fill:none;stroke:#e6edf0;stroke-width:12;stroke-linecap:round;stroke-linejoin:round}#flightEdge{fill:none;stroke:#597888;stroke-width:3;stroke-linecap:round}
+.particle{animation:flow 4s linear infinite}.particle:nth-child(2n){animation-delay:-1.4s}.particle:nth-child(3n){animation-delay:-2.6s}@keyframes flow{0%{transform:translate(0,0);opacity:0}12%{opacity:1}90%{opacity:1}100%{transform:translate(245px,-150px);opacity:0}}
+@media(max-width:950px){main{grid-template-columns:1fr}.controls{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}.controls>.section-title,.group-title,.actions{grid-column:1/-1}}
+@media(max-width:620px){main{padding:0 9px}.controls{display:block}.metrics{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:repeat(2,1fr)}.visual{padding:10px 6px}}
+</style><style>
+/* Navigation de retour vers la plateforme */
+.site-homebar{background:#eaf3f7;border-bottom:1px solid #cbdce5;padding:9px 18px;font:600 13px/1.4 system-ui,Segoe UI,Arial,sans-serif}
+.site-homebar a{display:inline-flex;align-items:center;gap:7px;color:#155875;text-decoration:none}
+.site-homebar a:hover{text-decoration:underline}
+</style>
+</head><body>
+<div class="site-homebar"><a href="../../../index.html">← Retour à l’accueil du laboratoire pédagogique</a></div>
+
+<header><div class="eyebrow">Outil pédagogique interactif · BTS Métiers de l’Eau</div><h1>Dimensionnement et exploitation d’une vis d’Archimède</h1><p>Un modèle animé pour dimensionner une vis, visualiser le transport de l’eau, comparer plusieurs vis en parallèle et évaluer les performances hydrauliques et énergétiques à partir de ton annexe Excel.</p></header>
+<main>
+<aside class="panel controls">
+<h2 class="section-title">Paramètres de dimensionnement</h2>
+<div class="group-title">Poste de relèvement – Feuil1</div>
+<div class="control"><label for="qt">Débit de pointe total <output id="qtv">3 500 m³/h</output></label><input id="qt" type="range" min="100" max="10000" step="50" value="3500"><div class="hint">Débit total à relever pour le poste</div></div>
+<div class="control"><label for="nv">Nombre de vis en parallèle <output id="nvv">3 vis</output></label><input id="nv" type="range" min="1" max="8" step="1" value="3"><div class="hint">Répartition du débit total entre les vis</div></div>
+<div class="control"><label for="alpha">Angle d’inclinaison α <output id="alphav">37°</output></label><input id="alpha" type="range" min="22" max="40" step="1" value="37"><div class="hint">Angle mesuré par rapport à l’horizontale</div></div>
+<div class="control"><label for="h">Hauteur de relevage H <output id="hv">7,5 m</output></label><input id="h" type="range" min="1" max="15" step=".5" value="7.5"></div>
+<div class="control"><label for="fp">Hauteur aval Fp <output id="fpv">0 m</output></label><input id="fp" type="range" min="0" max="3" step=".1" value="0"><div class="hint">Surhauteur aval prise en compte dans BL</div></div>
+<div class="control"><label for="mu">Coefficient de débit μ <output id="muv">0,0046</output></label><input id="mu" type="range" min=".001" max=".008" step=".0001" value=".0046"><div class="hint">À lire dans l’annexe / documentation de référence</div></div>
+<div class="group-title">Exploitation – Feuil2</div>
+<div class="control"><label for="motor">Puissance moteur par vis <output id="motorv">55 kW</output></label><input id="motor" type="range" min="2" max="250" step="1" value="55"></div>
+<div class="control"><label for="hours">Temps de fonctionnement journalier <output id="hoursv">8 h/j</output></label><input id="hours" type="range" min="1" max="24" step=".5" value="8"></div>
+<div class="control"><label for="price">Prix du kWh <output id="pricev">0,20 €/kWh</output></label><input id="price" type="range" min=".05" max=".6" step=".01" value=".2"></div>
+<div class="actions"><button class="btn primary" id="play">Pause animation</button><button class="btn secondary" id="reset">Réinitialiser</button></div>
+</aside>
+<section class="content">
+<div class="panel visual">
+<div class="topline"><h2 class="section-title">Coupe longitudinale animée – vis et auge</h2><span class="status" id="status">Vis en fonctionnement</span></div>
+<svg class="scene" viewBox="0 0 940 500" role="img" aria-label="Schéma animé en coupe d'une vis d'Archimède inclinée">
+<defs>
+ <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#a5edf4" stop-opacity=".95"/><stop offset="1" stop-color="#168ac5" stop-opacity=".88"/></linearGradient>
+ <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#dbe5e9"/><stop offset=".5" stop-color="#718c99"/><stop offset="1" stop-color="#e4ecef"/></linearGradient>
+ <linearGradient id="trough" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#dce8ed" stop-opacity=".7"/><stop offset="1" stop-color="#718b99" stop-opacity=".85"/></linearGradient>
+ <clipPath id="troughClip"><path d="M155 388 L700 75 L752 155 L207 468 Z"/></clipPath>
+ <marker id="blueArrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="#168ac5"/></marker>
+</defs>
+<!-- ground and sump -->
+<path d="M22 438 H915" stroke="#9aadb8" stroke-width="3"/>
+<path d="M35 330 L35 438 L205 438 L205 330" fill="#c4edf3" fill-opacity=".38" stroke="#5c8496" stroke-width="5"/>
+<path d="M39 365 Q70 357 105 365 T200 365 L200 435 L39 435Z" fill="url(#water)"/>
+<path d="M40 365 Q80 356 120 365 T200 365" fill="none" stroke="#e4fbff" stroke-width="3"/>
+<text x="42" y="310" font-size="15" font-weight="700" fill="#31566b">Bâche amont</text><text x="45" y="390" font-size="12" fill="#155d7b">Niveau d’eau</text>
+<!-- trough -->
+<path d="M145 390 L700 72 L755 155 L200 473 Z" fill="url(#trough)" stroke="#526f7e" stroke-width="6"/>
+<path d="M155 389 L700 78" stroke="#f4fafc" stroke-width="4"/>
+<g clip-path="url(#troughClip)">
+ <path d="M120 370 L700 35 L790 170 L210 505Z" fill="url(#water)" opacity=".75"/>
+ <g id="particles"></g>
+</g>
+<!-- support bearing and drive -->
+<path d="M666 92 L720 62 L754 119" fill="none" stroke="#506d7b" stroke-width="11"/>
+<rect x="735" y="30" width="100" height="62" rx="8" fill="#25495d" stroke="#16394d" stroke-width="3"/>
+<circle cx="785" cy="61" r="20" fill="#90a9b5" stroke="#e4edf1" stroke-width="4"/><path d="M785 45 V77 M769 61 H801" stroke="#31566b" stroke-width="4"/>
+<text x="845" y="48" font-size="13" fill="#31566b" font-weight="700">Motoréducteur</text><path d="M834 55 H845" stroke="#31566b" stroke-width="2"/>
+<!-- screw axis -->
+<path d="M175 407 L705 103" stroke="#3f5c6b" stroke-width="24" stroke-linecap="round"/>
+<path d="M175 400 L705 96" stroke="#c7d5db" stroke-width="7" stroke-linecap="round"/>
+<!-- helical flight dynamically drawn as a helix around axis -->
+<path id="flightPath" d="M175 400 L705 96"/><path id="flightEdge" d="M175 400 L705 96"/>
+<!-- inlet/outlet arrows -->
+<path d="M95 350 L180 350" stroke="#168ac5" stroke-width="4" marker-end="url(#blueArrow)"/><text x="43" y="340" font-size="12" fill="#168ac5" font-weight="700">Entrée</text>
+<path d="M760 112 L845 63" stroke="#168ac5" stroke-width="15" stroke-linecap="round"/><path d="M780 102 L839 68" stroke="#e5faff" stroke-width="4" marker-end="url(#blueArrow)"/><text x="835" y="112" font-size="13" fill="#168ac5" font-weight="700">Refoulement</text>
+<!-- labels and dimensions -->
+<path d="M110 436 L110 270" stroke="#168ac5" stroke-width="2"/><path d="M104 278 L110 268 L116 278" fill="none" stroke="#168ac5" stroke-width="2"/><text x="25" y="255" font-size="13" fill="#31566b" font-weight="700">H + Fp</text>
+<path d="M185 454 L690 165" stroke="#168ac5" stroke-width="1.5" stroke-dasharray="5 5"/><text x="390" y="454" font-size="13" fill="#31566b" font-weight="700">Longueur inclinée BL</text>
+<path d="M195 410 L280 410" stroke="#b88736" stroke-width="2"/><text x="220" y="400" font-size="12" fill="#795b32">Auge / berceau</text>
+<text x="320" y="48" font-size="13" fill="#31566b" font-weight="700">Hélice tournante autour de l’axe</text><path d="M430 55 L450 190" stroke="#31566b" stroke-width="1.5" stroke-dasharray="4 4"/>
+<text x="20" y="485" font-size="11" fill="#607586">Schéma pédagogique – représentation simplifiée, non à l’échelle</text>
+</svg>
+<div class="legend"><span><i class="dot" style="background:#168ac5"></i>Eau transportée</span><span><i class="dot" style="background:#b8c9d1"></i>Hélice et arbre</span><span><i class="dot" style="background:#526f7e"></i>Auge</span><span><i class="dot" style="background:#25495d"></i>Motoréducteur</span></div>
+</div>
+<div class="metrics">
+<div class="panel metric"><small>Diamètre extérieur calculé</small><strong id="mD">—</strong><em>m</em></div>
+<div class="panel metric"><small>Régime de rotation</small><strong id="mN">—</strong><em>tr/min</em></div>
+<div class="panel metric"><small>Débit par vis</small><strong id="mQ">—</strong><em>m³/h</em></div>
+<div class="panel metric"><small>Puissance hydraulique totale</small><strong id="mP">—</strong><em>kW</em></div>
+</div>
+<div class="panel results">
+<h2 class="section-title">Résultats de dimensionnement et d’exploitation</h2>
+<div class="grid">
+<div class="result"><span>Débit unitaire Qr</span><b id="qr">—</b></div>
+<div class="result"><span>Coefficient σ = p/D</span><b id="sigma">—</b></div>
+<div class="result"><span>Coefficient δ = d/D</span><b id="delta">—</b></div>
+<div class="result"><span>Pas de vis p</span><b id="pitch">—</b></div>
+<div class="result"><span>Diamètre du noyau d</span><b id="core">—</b></div>
+<div class="result"><span>Longueur inclinée BL</span><b id="length">—</b></div>
+<div class="result"><span>Nombre de pas / filets</span><b id="turns">—</b></div>
+<div class="result"><span>Rendement estimé</span><b id="eff">—</b></div>
+<div class="result"><span>Coût énergétique journalier</span><b id="cost">—</b></div>
+</div>
+<div class="check" id="capacity"></div><div class="check" id="energy"></div>
+</div>
+<div class="panel annex">
+<h2 class="section-title">Coefficients issus du tableau de ton annexe</h2>
+<table><thead><tr><th>Angle α</th><th>22°</th><th>26°</th><th>28°</th><th>30°</th><th>33°</th><th>35°</th><th>37°</th><th>40°</th></tr></thead>
+<tbody><tr><td>δ = d/D</td><td>0,44</td><td>0,40</td><td>0,46</td><td>0,50</td><td>0,55</td><td>0,50</td><td>0,55</td><td>0,60</td></tr>
+<tr><td>σ = p/D</td><td>1,20</td><td>1,20</td><td>1,20</td><td>1,00</td><td>0,80</td><td>0,80</td><td>0,80</td><td>0,80</td></tr></tbody></table>
+<div class="hint" style="margin-top:8px">Les coefficients σ et δ sont automatiquement sélectionnés selon l’angle exact ou la valeur tabulée la plus proche. Le coefficient μ reste réglable : ton classeur donne 0,0032 dans Feuil2 et 0,0046 dans Feuil1.</div>
+</div>
+<div class="panel note"><b>Relations de calcul reprises de l'annexe :</b> Qr = Qpointe / (nombre de vis × 3600) ; N = 50 / D<sup>2/3</sup> ; Qr = 1,15 × μ × N × D³ ; D = [Qr / (1,15 × μ × 50)]<sup>3/7</sup> ; p = σD ; d = δD ; BL = (H + Fp) / sin(α) ; nombre de pas = BL/p ; Ph = ρgHQ. Consommation journalière = Pmoteur × durée × nombre de vis ; coût = consommation × prix du kWh. Rendement indicatif = Ph total / puissance moteur totale.</div>
+</section></main>
+<script>
+const $=id=>document.getElementById(id);
+const ids=['qt','nv','alpha','h','fp','mu','motor','hours','price'];
+const defaults={qt:3500,nv:3,alpha:37,h:7.5,fp:0,mu:.0046,motor:55,hours:8,price:.2};
+const annex=[{a:22,d:.44,s:1.2},{a:26,d:.40,s:1.2},{a:28,d:.46,s:1.2},{a:30,d:.50,s:1},{a:33,d:.55,s:.8},{a:35,d:.50,s:.8},{a:37,d:.55,s:.8},{a:40,d:.60,s:.8}];
+const f=(v,n=2)=>Number.isFinite(v)?v.toFixed(n).replace('.',','):'—';
+function calc(){
+ const qt=+$('qt').value,nv=+$('nv').value,a=+$('alpha').value,H=+$('h').value,Fp=+$('fp').value,mu=+$('mu').value,Pmot=+$('motor').value,hrs=+$('hours').value,price=+$('price').value;
+ $('qtv').textContent=f(qt,0)+' m³/h';$('nvv').textContent=nv+' vis';$('alphav').textContent=a+'°';$('hv').textContent=f(H,1)+' m';$('fpv').textContent=f(Fp,1)+' m';$('muv').textContent=f(mu,4);$('motorv').textContent=Pmot+' kW';$('hoursv').textContent=f(hrs,1)+' h/j';$('pricev').textContent=f(price,2)+' €/kWh';
+ const co=annex.reduce((best,x)=>Math.abs(x.a-a)<Math.abs(best.a-a)?x:best,annex[0]);
+ const Qr=qt/(nv*3600),D=Math.pow(Qr/(1.15*mu*50),3/7),N=50/Math.pow(D,2/3),Qcalc=1.15*mu*N*Math.pow(D,3),Qh=Qcalc*3600;
+ const sigma=co.s,delta=co.d,p=sigma*D,d=delta*D,BL=(H+Fp)/Math.sin(a*Math.PI/180),turns=BL/p;
+ const PhOne=1000*9.81*H*Qr/1000,PhTotal=PhOne*nv,Pin=Pmot*nv,eff=PhTotal/Pin*100;
+ const daily=Pin*hrs,cost=daily*price;
+ $('mD').textContent=f(D,3);$('mN').textContent=f(N,1);$('mQ').textContent=f(Qh,1);$('mP').textContent=f(PhTotal,2);
+ $('qr').textContent=f(Qr*3600,1)+' m³/h';$('sigma').textContent=f(sigma,2);$('delta').textContent=f(delta,2);$('pitch').textContent=f(p,3)+' m';$('core').textContent=f(d,3)+' m';$('length').textContent=f(BL,2)+' m';$('turns').textContent=f(turns,1);$('eff').textContent=f(eff,1)+' %';$('cost').textContent=f(cost,2)+' €/j';
+ const cap=$('capacity');cap.className='check ok';cap.textContent='Dimensionnement théorique : diamètre extérieur calculé '+f(D,3)+' m par vis pour assurer '+f(qt,0)+' m³/h au total, répartis sur '+nv+' vis. Le débit unitaire calculé par la formule est '+f(Qh,1)+' m³/h.';
+ const en=$('energy');en.className='check '+(eff<=100?'ok':'bad');en.textContent='Bilan énergétique : puissance hydraulique totale '+f(PhTotal,2)+' kW pour '+f(Pin,1)+' kW moteur installés. Consommation estimée '+f(daily,1)+' kWh/j, coût '+f(cost,2)+' €/j.'+(eff>100?' Attention : rendement supérieur à 100 %, puissance moteur ou données à vérifier.':'');
+ window.screwRPM=N;window.screwPitchPx=Math.max(30,p*100);window.screwRadiusPx=Math.max(13,D*22);
+}
+let phase=0,last=0,playing=true;
+function draw(t){
+ if(last&&playing){let dt=Math.min((t-last)/1000,.05);phase-=2*Math.PI*(window.screwRPM||10)/60*dt;}
+ last=t;
+ const x0=175,y0=400,x1=705,y1=96,dx=x1-x0,dy=y1-y0,L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,nx=-uy,ny=ux;
+ const pitch=window.screwPitchPx||75,rad=window.screwRadiusPx||30;
+ let path='';
+ for(let i=0;i<=240;i++){let z=L*i/240,off=rad*Math.cos(2*Math.PI*z/pitch+phase);let x=x0+ux*z+nx*off,y=y0+uy*z+ny*off;path+=(i?' L':'M')+x.toFixed(1)+' '+y.toFixed(1);}
+ $('flightPath').setAttribute('d',path);$('flightEdge').setAttribute('d',path);
+ requestAnimationFrame(draw);
+}
+function particles(){let g=$('particles');g.innerHTML='';for(let i=0;i<23;i++){let x=190+(i*29%280),y=350-(i*19%145);g.insertAdjacentHTML('beforeend',`<circle class="particle" cx="${x}" cy="${y}" r="${3+i%3}" fill="#e7fbff" stroke="#168ac5" stroke-width="1"/>`)}}
+ids.forEach(id=>$(id).addEventListener('input',calc));
+$('play').onclick=()=>{playing=!playing;document.querySelectorAll('.particle').forEach(x=>x.style.animationPlayState=playing?'running':'paused');$('play').textContent=playing?'Pause animation':'Reprendre animation';$('status').textContent=playing?'Vis en fonctionnement':'Animation en pause'};
+$('reset').onclick=()=>{ids.forEach(id=>$(id).value=defaults[id]);if(!playing)$('play').click();calc()};
+particles();calc();requestAnimationFrame(draw);
+</script></body></html>
