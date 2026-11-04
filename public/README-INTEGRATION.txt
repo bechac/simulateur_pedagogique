@@ -1,23 +1,15 @@
-DOSSIER PUBLIC — PORTAIL PÉDAGOGIQUE BTS MÉTIERS DE L’EAU / STI2D SIN
+INTEGRATION DE DEUX SIMULATEURS STI2D-SIN
 
-IMPORTANT : ce dossier est un complément à fusionner avec le dossier public déjà présent dans ton dépôt.
-Ne supprime pas l’ancien dossier public avant d’avoir conservé les chemins existants, notamment :
-- bts-metiers-eau/pompage/ (version stable V13)
-- les dossiers BTS déjà publiés (poste-relevage, vis-archimede, process et régulation).
+Contenu :
+- public/index.html : index du portail actualisé avec les deux nouvelles cartes et leurs aperçus.
+- public/sti2d-sin/traitement-information/conversion-bases/index.html
+- public/sti2d-sin/traitement-information/logique-combinatoire/index.html
 
-CONTENU
-- index.html : nouvelle page d’accueil à deux parcours.
-- bts-metiers-eau/ : nouveaux modèles reçus aujourd’hui.
-- sti2d-sin/ : modèles CAN, Ethernet, I²C et réseaux communicants.
-- Chaque simulateur est dans son propre dossier avec un index.html.
+Installation dans GitHub :
+1. Ouvrir le dépôt puis le dossier public.
+2. Importer/remplacer public/index.html à la racine du dossier public.
+3. Importer les deux nouveaux dossiers sous public/sti2d-sin/traitement-information/.
+4. Ne supprimer aucun autre dossier ni simulateur déjà présent.
+5. Valider avec Commit changes.
 
-INTÉGRATION CONSEILLÉE
-1. Décompresser l’archive.
-2. Ouvrir le dossier public de ton dépôt GitHub.
-3. Copier les nouveaux dossiers bts-metiers-eau et sti2d-sin dans le public existant.
-4. Remplacer public/index.html par le nouvel index.html.
-5. NE PAS supprimer les dossiers déjà présents dans GitHub. En particulier, conserver pompage V13.
-6. Faire un commit et vérifier le déploiement Netlify.
-
-Les versions nouvellement fournies ont été placées dans des dossiers distincts lorsque le dépôt possédait déjà une version portant le même nom : cela évite tout écrasement involontaire.
-Le dossier QSE est prévu dans l’architecture mais reste à alimenter : aucun simulateur QSE n’a été inventé.
+Cette archive ne remplace pas l'ensemble du dossier public : elle contient seulement l'index actualisé et les deux nouveaux simulateurs.
