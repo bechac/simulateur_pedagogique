@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décantation – trajectoire d'une particule</title>
+<style>
+:root{--bg:#f3f6fa;--panel:#fff;--ink:#172638;--muted:#64748b;--blue:#168bd2;--teal:#0d9488;--orange:#e28a25;--line:#dbe3ec}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Arial,sans-serif}
+main{max-width:1200px;margin:auto;padding:22px}.top{margin-bottom:18px}.top h1{margin:0 0 5px;font-size:26px}.top p{margin:0;color:var(--muted)}
+.layout{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:17px;box-shadow:0 2px 8px #2030400a}
+h2{font-size:17px;margin:0 0 13px}.group{padding:11px 0;border-top:1px solid var(--line)}.group:first-of-type{border-top:0;padding-top:0}
+label{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:13px;margin-bottom:5px}
+input[type=range]{width:100%;accent-color:var(--blue)}input[type=number]{width:105px;padding:7px;border:1px solid var(--line);border-radius:6px;font:inherit;text-align:right}
+.field{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0}.field span{font-size:13px;color:#334155}
+.unit{color:var(--muted);font-weight:400}.readout{font-variant-numeric:tabular-nums;color:var(--blue)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}button{border:0;border-radius:7px;padding:9px 13px;background:#e8f3fb;color:#075985;font-weight:700;cursor:pointer}button.primary{background:#147fba;color:white}button:hover{filter:brightness(.97)}
+.results{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}.metric{background:#f8fafc;border:1px solid var(--line);border-radius:9px;padding:11px}.metric small{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.metric strong{font-size:18px;font-variant-numeric:tabular-nums}
+canvas{width:100%;height:auto;display:block;background:#f8fbfd;border:1px solid var(--line);border-radius:9px}
+.legend{display:flex;gap:15px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:9px 0 0}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.status{padding:11px 13px;border-radius:8px;margin-top:12px;font-weight:700}.good{background:#e5f5ef;color:#08734f}.bad{background:#fff0e5;color:#9a4b08}
+.note{font-size:12px;color:var(--muted);margin-top:12px}.formula{background:#f8fafc;padding:10px;border-radius:8px;font-size:13px;margin-top:12px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.results{grid-template-columns:repeat(2,1fr)}main{padding:12px}}
+</style>
+</head>
+<body>
+<main>
+ <header class="top"><h1>Décantation en bassin rectangulaire</h1><p>Visualisation dynamique de la trajectoire d'une particule et vérification de la charge hydraulique superficielle.</p></header>
+ <div class="layout">
+  <section class="panel">
+   <h2>Paramètres de la particule</h2>
+   <div class="group">
+    <label for="diam">Diamètre <span class="readout" id="diamV">100 µm</span></label>
+    <input id="diam" type="range" min="5" max="500" step="1" value="100">
+    <div class="field"><span>Diamètre (µm)</span><input id="diamN" type="number" min="1" max="2000" value="100"></div>
+    <div class="field"><span>Masse volumique particule (kg/m³)</span><input id="rhoP" type="number" min="900" max="5000" step="10" value="2650"></div>
+   </div>
+   <h2>Paramètres hydrauliques</h2>
+   <div class="group">
+    <div class="field"><span>Débit entrant Q (m³/h)</span><input id="q" type="number" min="0.1" max="5000" step="1" value="30"></div>
+    <div class="field"><span>Longueur du bassin (m)</span><input id="length" type="number" min="1" max="100" step=".5" value="12"></div>
+    <div class="field"><span>Largeur (m)</span><input id="width" type="number" min=".5" max="30" step=".5" value="4"></div>
+    <div class="field"><span>Hauteur d'eau (m)</span><input id="height" type="number" min=".3" max="10" step=".1" value="3"></div>
+    <div class="field"><span>Masse volumique de l'eau (kg/m³)</span><input id="rhoW" type="number" min="950" max="1100" step="1" value="998"></div>
+    <div class="field"><span>Viscosité dynamique (mPa·s)</span><input id="mu" type="number" min=".1" max="5" step=".01" value="1.002"></div>
+   </div>
+   <div class="actions"><button class="primary" id="play">▶ Lancer l'animation</button><button id="reset">Réinitialiser</button></div>
+   <p class="note">Valeurs de l'eau réglées ici à environ 20 °C. Vous pouvez modifier la masse volumique et la viscosité pour représenter une autre température ou un autre fluide.</p>
+  </section>
+  <section class="panel">
+   <div class="results">
+    <div class="metric"><small>Vitesse de Stokes</small><strong id="vs">—</strong><small>m/h</small></div>
+    <div class="metric"><small>Surface au miroir</small><strong id="area">—</strong><small>m²</small></div>
+    <div class="metric"><small>Débit admissible Qadm</small><strong id="qadm">—</strong><small>m³/h</small></div>
+    <div class="metric"><small>Charge superficielle</small><strong id="charge">—</strong><small>m/h</small></div>
+   </div>
+   <canvas id="scene" width="900" height="440" aria-label="Schéma animé du décanteur et de la trajectoire d'une particule"></canvas>
+   <div class="legend"><span><i class="dot" style="background:#e28a25"></i>Particule suivie</span><span><i class="dot" style="background:#168bd2"></i>Écoulement horizontal</span><span><i class="dot" style="background:#0d9488"></i>Zone de dépôt</span><span><i class="dot" style="background:#64748b"></i>Trajectoire théorique</span></div>
+   <div id="status" class="status">Calcul en cours…</div>
+   <div class="formula"><b>Modèle utilisé – loi de Stokes :</b><br>
+    Vs = (ρp − ρe) × g × d² / (18 × μ)<br>
+    Qadm = Vs × Smiroir &nbsp; avec &nbsp; Smiroir = L × l<br>
+    <span class="note">Le modèle suppose des particules sphériques, une eau au repos verticalement, un écoulement piston horizontal et un régime de Stokes (Re&lt;1). La vitesse horizontale est estimée par Q/(largeur × hauteur d'eau).</span>
+   </div>
+  </section>
+ </div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const ids=['diam','diamN','rhoP','q','length','width','height','rhoW','mu'];
+let running=false, elapsed=0, last=0, raf=0;
+function val(id){return Math.max(0,Number($(id).value)||0)}
+function calc(){
+ let d=val('diamN')*1e-6, rp=val('rhoP'), rw=val('rhoW'), mu=val('mu')*1e-3;
+ let L=val('length'), W=val('width'), H=val('height'), Q=val('q');
+ let vs=Math.max(0,(rp-rw)*9.81*d*d/(18*mu)); // m/s
+ let area=L*W, vsH=vs*3600, qadm=vsH*area, charge=Q/Math.max(area,1e-9);
+ let vx=(Q/3600)/Math.max(W*H,1e-9);
+ let tSet=H/Math.max(vs,1e-12), tPass=L/Math.max(vx,1e-12);
+ let captured=tSet<=tPass;
+ let Re=rw*vs*d/mu;
+ $('diamV').textContent=val('diamN').toFixed(0)+' µm';
+ $('vs').textContent=fmt(vsH,3); $('area').textContent=fmt(area,2);
+ $('qadm').textContent=fmt(qadm,2); $('charge').textContent=fmt(charge,2);
+ $('status').className='status '+(Q<=qadm?'good':'bad');
+ $('status').textContent=(Q<=qadm?'✓ Séparation théoriquement possible pour cette particule. ':'⚠ Débit supérieur au débit admissible : risque de départ de la particule. ')+
+ 'Re = '+fmt(Re,3)+' ; '+(captured?'la particule atteint le fond avant la sortie.':'la particule atteint la sortie avant le fond.');
+ return {L,W,H,Q,vs,vx,area,qadm,charge,captured,tSet,tPass};
+}
+function fmt(n,d=2){return Number.isFinite(n)?n.toLocaleString('fr-FR',{maximumFractionDigits:d}):'—'}
+function draw(){
+ const c=$('scene'),ctx=c.getContext('2d'),m=calc(),w=c.width,h=c.height;
+ ctx.clearRect(0,0,w,h);
+ const x0=95,y0=90,bw=710,bh=245, floor=y0+bh;
+ // water and tank
+ ctx.fillStyle='#e7f5fc';ctx.fillRect(x0,y0,bw,bh);
+ ctx.strokeStyle='#334155';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x0,y0-12);ctx.lineTo(x0,floor);ctx.lineTo(x0+bw,floor);ctx.lineTo(x0+bw,y0-12);ctx.stroke();
+ ctx.strokeStyle='#168bd2';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0+bw,y0);ctx.stroke();
+ // inlet/outlet arrows
+ ctx.fillStyle='#168bd2';ctx.fillRect(28,y0+85,67,12);ctx.beginPath();ctx.moveTo(95,y0+72);ctx.lineTo(115,y0+91);ctx.lineTo(95,y0+110);ctx.fill();
+ ctx.fillRect(x0+bw-2,y0+85,75,12);ctx.beginPath();ctx.moveTo(x0+bw+73,y0+72);ctx.lineTo(x0+bw+93,y0+91);ctx.lineTo(x0+bw+73,y0+110);ctx.fill();
+ ctx.fillStyle='#334155';ctx.font='15px Arial';ctx.fillText('Entrée',25,y0+62);ctx.fillText('Sortie',x0+bw+38,y0+62);
+ // sediment zone
+ ctx.fillStyle='#d9eee8';ctx.fillRect(x0,floor-20,bw,20);
+ ctx.fillStyle='#0d766b';ctx.font='13px Arial';ctx.fillText('Dépôt des particules',x0+12,floor-5);
+ // flow arrows
+ ctx.strokeStyle='#168bd2';ctx.lineWidth=2;ctx.setLineDash([7,6]);
+ for(let i=0;i<4;i++){let yy=y0+45+i*47;ctx.beginPath();ctx.moveTo(x0+35,yy);ctx.lineTo(x0+bw-35,yy);ctx.stroke();ctx.beginPath();ctx.moveTo(x0+bw-45,yy-6);ctx.lineTo(x0+bw-35,yy);ctx.lineTo(x0+bw-45,yy+6);ctx.stroke()}
+ ctx.setLineDash([]);
+ // theoretical particle path, starts at water surface near inlet
+ let frac=Math.min(1,m.L>0?(m.vs/Math.max(m.charge,1e-12)):0);
+ let xEnd=x0+bw, yEnd=y0+bh;
+ ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(x0+5,y0+12);ctx.lineTo(xEnd,y0+12+Math.min(bh-15,(m.vs/Math.max(m.vx,1e-9))*m.L/m.H*bh));ctx.stroke();ctx.setLineDash([]);
+ // animation normalized along theoretical travel time to tank exit
+ let duration=Math.max(3,Math.min(18,m.L/Math.max(m.vx,0.0001)));
+ let progress=running?(elapsed%duration)/duration:0.12;
+ let px=x0+10+progress*(bw-20);
+ let py=y0+12+Math.min(bh-32,(m.vs/Math.max(m.vx,1e-9))*(px-x0)/Math.max(m.L,0.01)*bh/m.H);
+ py=Math.min(floor-12,py);
+ ctx.beginPath();ctx.fillStyle='#e28a25';ctx.arc(px,py,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#9a4b08';ctx.lineWidth=2;ctx.stroke();
+ ctx.fillStyle='#172638';ctx.font='bold 13px Arial';ctx.fillText('Particule',Math.min(px+13,x0+bw-70),py-13);
+ // dimension labels
+ ctx.fillStyle='#334155';ctx.font='14px Arial';ctx.fillText('L = '+fmt(m.L,1)+' m',x0+bw/2-35,floor+28);
+ ctx.save();ctx.translate(52,y0+bh/2);ctx.rotate(-Math.PI/2);ctx.fillText('Hauteur d’eau H = '+fmt(m.H,1)+' m',-75,0);ctx.restore();
+ ctx.fillStyle='#64748b';ctx.font='12px Arial';ctx.fillText('Schéma de principe – dimensions non à l’échelle',x0,h-12);
+}
+function loop(t){if(!running)return;if(!last)last=t;elapsed+=(t-last)/1000;last=t;draw();raf=requestAnimationFrame(loop)}
+function start(){running=!running;$('play').textContent=running?'Ⅱ Pause':'▶ Lancer l’animation';if(running){last=0;raf=requestAnimationFrame(loop)}else{cancelAnimationFrame(raf)}}
+$('play').addEventListener('click',start);
+$('reset').addEventListener('click',()=>{running=false;cancelAnimationFrame(raf);elapsed=0;$('play').textContent='▶ Lancer l’animation';draw()});
+$('diam').addEventListener('input',()=>{$('diamN').value=$('diam').value;draw()});
+$('diamN').addEventListener('input',()=>{$('diam').value=Math.max(5,Math.min(500,val('diamN')));draw()});
+ids.slice(2).forEach(id=>$(id).addEventListener('input',draw));
+draw();
+</script>
+</body></html>

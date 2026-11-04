@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratoire pédagogique — Encapsulation Ethernet</title>
+<style>
+:root{
+ --navy:#12345a;--blue:#1976d2;--cyan:#35a8d8;--green:#269b59;--orange:#e39a22;
+ --purple:#7952b8;--red:#d94b55;--ink:#172b43;--muted:#61738a;--line:#d7e1ec;
+ --paper:#f4f8fc;--white:#fff;--shadow:0 8px 24px rgba(28,58,91,.09);
+}
+*{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 "Segoe UI",Arial,sans-serif}
+header{background:linear-gradient(115deg,#0b3768,#176da7);color:white;padding:24px max(22px,calc((100% - 1400px)/2));}
+header h1{margin:0;font-size:clamp(23px,3vw,34px);letter-spacing:.2px}header p{margin:6px 0 0;color:#d9eafa}
+.wrap{max-width:1400px;margin:20px auto;padding:0 18px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:#fff;color:var(--navy);padding:10px 16px;border-radius:10px;font-weight:700;cursor:pointer}
+.tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.panel{display:none}.panel.active{display:block}
+.card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:17px;box-shadow:var(--shadow);margin-bottom:16px}
+h2{font-size:20px;margin:0 0 12px;color:var(--navy)}h3{font-size:16px;margin:0 0 10px;color:var(--navy)}
+.sub{color:var(--muted);font-size:13px;margin-top:-6px}
+.grid2{display:grid;grid-template-columns:minmax(280px, .9fr) minmax(420px,1.5fr);gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+label{display:block;font-size:13px;font-weight:700;color:#40556d;margin:9px 0 4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid #bdcddd;border-radius:8px;background:#fff;color:var(--ink);font:14px inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid #9bcaf2;border-color:var(--blue)}
+textarea{min-height:72px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.check{display:flex;align-items:center;gap:8px;margin:12px 0}.check input{width:auto}
+button{font:inherit}.btn{border:0;border-radius:9px;padding:10px 15px;background:var(--blue);color:white;font-weight:700;cursor:pointer}
+.btn.secondary{background:#e8f1fa;color:var(--navy);border:1px solid #cbdced}.btn.dark{background:var(--navy)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+.note{background:#eef6ff;border-left:4px solid var(--blue);padding:10px 12px;border-radius:7px;font-size:13px;color:#294d70}
+.warn{background:#fff6e5;border-left:4px solid var(--orange);padding:10px 12px;border-radius:7px;font-size:13px}
+.osistack{display:flex;flex-direction:column;gap:6px;width:100%}
+.layer{display:grid;grid-template-columns:44px minmax(115px,1fr) minmax(130px,1.4fr);align-items:center;gap:10px;width:100%;min-width:0;border:1px solid #dce5ef;border-radius:9px;padding:8px 10px;cursor:pointer;transition:.2s}
+.layer:hover,.layer.selected{outline:2px solid #173f6a;transform:translateX(2px)}
+.layer .n{font-size:22px;font-weight:900;text-align:center}.layer b{font-size:14px}.layer small{color:#4d6279}
+.l7,.l6,.l5{background:#ffe9f0}.l4{background:#fff1c8}.l3{background:#e1f7e7}.l2{background:#e1f0ff}.l1{background:#eee6ff}
+.l7 .n,.l6 .n,.l5 .n{color:#a53b65}.l4 .n{color:#966300}.l3 .n{color:#168143}.l2 .n{color:#1766ad}.l1 .n{color:#6840a5}
+.detailbox{margin-top:10px;padding:12px;border-radius:10px;background:#f7faff;border:1px solid var(--line);min-height:104px}
+.pdu{display:flex;align-items:stretch;gap:4px;flex-wrap:nowrap;margin:10px 0}\n.interactive-pdu .pdu-block{border:2px solid transparent;cursor:pointer;min-width:0;min-height:68px;transition:transform .18s,box-shadow .18s,border-color .18s;font:inherit}\n.interactive-pdu .pdu-block:hover{transform:translateY(-2px);box-shadow:0 4px 10px #1b3b5b20}\n.interactive-pdu .pdu-block.selected{border-color:#183e65;box-shadow:0 0 0 3px #d7eaff;transform:translateY(-3px)}\n.pdu-block.data{background:#e9e1f8;color:#52318a}.pdu-block.trans{background:#b9e1fb;color:#124f7e}.pdu-block.ip{background:#bcebc8;color:#145b2c}.pdu-block.mac{background:#f8d58d;color:#65420d}.pdu-block.bits{background:#e6dcfa;color:#54338a}\n.pdu-explanation{margin-top:12px;min-height:130px}.pdu-explanation p{margin:7px 0}
+.pdu span{padding:10px 8px;text-align:center;border-radius:7px;font-size:12px;font-weight:800;min-width:65px;flex:1}
+.pdu .mac{background:#f8d58d;color:#65420d}.pdu .ip{background:#bcebc8;color:#145b2c}.pdu .trans{background:#b9e1fb;color:#124f7e}.pdu .data{background:#e9e1f8;color:#52318a}.pdu .fcs{background:#f6bfc4;color:#7e1e29}.pdu .vlan{background:#ffe0b4;color:#784600}
+.frame-scroll{overflow-x:auto;padding-bottom:4px}
+.framebar{display:flex;min-width:760px;gap:3px;align-items:stretch}
+.framefield{border:2px solid transparent;border-radius:8px;padding:9px 7px;text-align:center;cursor:pointer;min-width:85px;flex:1;font-size:12px;font-weight:800;transition:.2s}
+.framefield small{display:block;font-weight:500;margin-top:5px}
+.framefield.active{border-color:#102e50;box-shadow:0 0 0 3px #d7eaff;transform:translateY(-3px)}
+.f-dst,.f-src{background:#ffe0a3}.f-tag{background:#ffd0a0}.f-type{background:#f4e5a5}.f-payload{background:#c9edcf}.f-fcs{background:#f4c6c9}
+.hex{background:#101e30;color:#d7e9ff;border-radius:10px;padding:13px;font:13px/1.8 Consolas,monospace;overflow-wrap:anywhere;min-height:78px}
+.hex .byte{display:inline-block;padding:0 3px;border-radius:3px;cursor:pointer}.hex .byte:hover,.hex .byte.active{background:#f4c44e;color:#172b43}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:8px 0}.dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.metric{background:#f5f9fd;border:1px solid var(--line);border-radius:10px;padding:11px}.metric strong{display:block;font-size:21px;color:var(--navy)}.metric small{color:var(--muted)}
+.steps{display:flex;gap:6px;align-items:center;flex-wrap:wrap}\n.transmission-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(230px,.8fr);gap:16px;align-items:start}\n.tx-osi{border:1px solid var(--line);border-radius:12px;padding:12px;background:#f8fbff}\n.tx-osi h3{margin-bottom:8px}.tx-layer{display:grid;grid-template-columns:30px 1fr auto;gap:7px;align-items:center;padding:6px 8px;margin:4px 0;border:1px solid #dce5ef;border-radius:7px;font-size:12px;opacity:.48;transition:.25s}\n.tx-layer .tx-num{font-weight:900;font-size:16px}.tx-layer.active{opacity:1;outline:2px solid #183e65;box-shadow:0 2px 8px #193b5b20;transform:translateX(-2px)}\n.tx-layer.done{opacity:.82}.tx-layer .tx-state{font-size:10px;font-weight:800}\n.tx-layer.l7,.tx-layer.l6,.tx-layer.l5{background:#ffe9f0}.tx-layer.l4{background:#fff1c8}.tx-layer.l3{background:#e1f7e7}.tx-layer.l2{background:#e1f0ff}.tx-layer.l1{background:#eee6ff}\n.tx-legend{font-size:11px;color:var(--muted);margin-top:8px}\n@media(max-width:900px){.transmission-layout{grid-template-columns:1fr}}.step{padding:7px 10px;border-radius:20px;background:#edf2f7;color:#64758a;font-size:12px;font-weight:700}.step.done{background:#dff4e5;color:#176b38}.step.current{background:#dceeff;color:#125b9c;outline:2px solid #80b8e8}
+.track{display:grid;grid-template-columns:1fr 70px 1fr;align-items:center;gap:8px;text-align:center;margin:18px 0}
+.host{border:2px solid #a9c4dd;border-radius:13px;padding:14px;background:#f7fbff}.host .pc{font-size:34px}.switch{font-size:30px;background:#e7f3ff;border:2px solid #8bb9df;border-radius:12px;padding:12px 4px}
+.packet{height:12px;border-radius:10px;background:#dce8f3;overflow:hidden;margin:9px 0}.packet i{display:block;height:100%;width:0;background:linear-gradient(90deg,#1d8bd1,#4bbd7b);transition:width .45s}
+.quizq{border:1px solid var(--line);border-radius:10px;padding:12px;margin:9px 0}.quizq label{font-weight:500}
+.good{color:#168143;font-weight:700}.bad{color:#c03945;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left}th{background:#f0f5fa;color:#29445f}
+footer{text-align:center;color:#6d7f92;font-size:12px;padding:15px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.interactive-pdu{flex-wrap:wrap}.interactive-pdu .pdu-block{flex:1 1 29%;}.grid3{grid-template-columns:1fr}.row{grid-template-columns:1fr}.layer{grid-template-columns:35px minmax(0,1fr);gap:7px}.layer small{grid-column:2}.layer b{min-width:0}.track{grid-template-columns:1fr}.switch{order:2}.host:last-child{order:3}}
+</style>
+</head>
+<body>
+<header>
+ <h1>Laboratoire réseau — Encapsulation Ethernet</h1>
+ <p>Du message applicatif à la trame Ethernet : construire, observer, transmettre et désencapsuler.</p>
+</header>
+<div class="wrap">
+ <nav class="tabs">
+  <button class="tab active" data-tab="osi">1 · Modèle OSI</button>
+  <button class="tab" data-tab="build">2 · Construire une trame</button>
+  <button class="tab" data-tab="transmit">3 · Transmission</button>
+  <button class="tab" data-tab="quiz">4 · Exercices</button>
+ </nav>
+
+ <section class="panel active" id="osi">
+  <div class="grid2">
+   <div class="card">
+    <h2>Les 7 couches du modèle OSI</h2>
+    <p class="sub">Sélectionner une couche pour afficher sa fonction et son unité de données.</p>
+    <div class="osistack" id="osiStack">
+     <div class="layer l7 selected" data-layer="7"><span class="n">7</span><b>Application</b><small>HTTP · DNS · DHCP · MQTT</small></div>
+     <div class="layer l6" data-layer="6"><span class="n">6</span><b>Présentation</b><small>Encodage · chiffrement · compression</small></div>
+     <div class="layer l5" data-layer="5"><span class="n">5</span><b>Session</b><small>Gestion des échanges</small></div>
+     <div class="layer l4" data-layer="4"><span class="n">4</span><b>Transport</b><small>TCP · UDP</small></div>
+     <div class="layer l3" data-layer="3"><span class="n">3</span><b>Réseau</b><small>IPv4 · IPv6 · ICMP</small></div>
+     <div class="layer l2" data-layer="2"><span class="n">2</span><b>Liaison de données</b><small>Ethernet · Wi-Fi · VLAN</small></div>
+     <div class="layer l1" data-layer="1"><span class="n">1</span><b>Physique</b><small>Bits · câble · fibre · radio</small></div>
+    </div>
+    <div class="detailbox" id="layerDetail"><b>Couche 7 — Application</b><p>Elle fournit les services réseau aux applications. Exemple : une requête HTTP ou un échange DNS.</p><b>PDU :</b> données.</div>
+   </div>
+   <div class="card">
+    <h2>Comment les données changent-elles de forme ?</h2>
+    <p class="sub">Les couches basses encapsulent les données reçues des couches supérieures.</p>
+    <div class="pdu interactive-pdu" aria-label="Étapes de l'encapsulation">
+     <button type="button" class="pdu-block data selected" data-pdu="data">Données<br><small>Application</small></button>
+     <button type="button" class="pdu-block trans" data-pdu="segment">Segment<br><small>TCP</small></button>
+     <button type="button" class="pdu-block ip" data-pdu="packet">Paquet<br><small>IP</small></button>
+     <button type="button" class="pdu-block mac" data-pdu="frame">Trame<br><small>Ethernet</small></button>
+     <button type="button" class="pdu-block bits" data-pdu="bits">Bits<br><small>Physique</small></button>
+    </div>
+    <div class="detailbox pdu-explanation" id="pduExplanation" aria-live="polite">
+     <b>Données — couche Application</b>
+     <p>Le message est produit par une application (par exemple une requête HTTP, une mesure MQTT ou une requête DNS). À ce stade, il s'agit du contenu utile à transmettre : texte, commande, mesure ou fichier.</p>
+     <b>Ce qu'il faut retenir :</b> les données applicatives constituent la charge utile qui sera progressivement encapsulée par les couches inférieures.
+    </div>
+    <div class="note"><b>À retenir :</b> le modèle OSI est un modèle de référence. Dans une pile TCP/IP réelle, certaines fonctions OSI (notamment présentation et session) sont souvent prises en charge par les applications et les bibliothèques.</div>
+    <h3 style="margin-top:18px">Encapsulation et désencapsulation</h3>
+    <div class="grid3">
+     <div class="metric"><strong>↓</strong><small>Émission : ajout d'informations de contrôle (en-têtes, et parfois remorque).</small></div>
+     <div class="metric"><strong>→</strong><small>Réseau : la trame est transmise vers le prochain équipement.</small></div>
+     <div class="metric"><strong>↑</strong><small>Réception : chaque couche interprète puis retire ses informations.</small></div>
+    </div>
+    <p class="warn" style="margin-top:14px">Attention : Ethernet transporte un paquet IP dans son champ « données ». Les adresses MAC servent à la livraison sur le lien local ; les adresses IP identifient les interfaces de bout en bout.</p>
+   </div>
+  </div>
+ </section>
+
+ <section class="panel" id="build">
+  <div class="grid2">
+   <div class="card">
+    <h2>Paramétrer la communication</h2>
+    <p class="sub">Modifie les champs : la trame et les tailles sont recalculées automatiquement.</p>
+    <div class="row">
+     <div><label for="srcMac">MAC source</label><input id="srcMac" value="02:1A:2B:3C:4D:5E"></div>
+     <div><label for="dstMac">MAC destination</label><input id="dstMac" value="08:00:27:12:34:56"></div>
+    </div>
+    <div class="row">
+     <div><label for="srcIp">IPv4 source</label><input id="srcIp" value="192.168.1.10"></div>
+     <div><label for="dstIp">IPv4 destination</label><input id="dstIp" value="192.168.1.20"></div>
+    </div>
+    <div class="row">
+     <div><label for="transport">Protocole transport</label><select id="transport"><option value="TCP">TCP</option><option value="UDP">UDP</option></select></div>
+     <div><label for="appProto">Protocole applicatif indicatif</label><select id="appProto"><option>HTTP</option><option>DNS</option><option>MQTT</option><option>Personnalisé</option></select></div>
+    </div>
+    <div class="row">
+     <div><label for="srcPort">Port source</label><input id="srcPort" type="number" min="1" max="65535" value="50124"></div>
+     <div><label for="dstPort">Port destination</label><input id="dstPort" type="number" min="1" max="65535" value="80"></div>
+    </div>
+    <label for="message">Données applicatives (texte UTF-8)</label>
+    <textarea id="message">GET /index.html HTTP/1.1</textarea>
+    <div class="check"><input type="checkbox" id="vlan"><label for="vlan" style="margin:0">Ajouter une étiquette VLAN 802.1Q</label></div>
+    <div class="row" id="vlanRow" style="display:none">
+     <div><label for="vlanId">Identifiant VLAN (VID 1–4094)</label><input id="vlanId" type="number" min="1" max="4094" value="20"></div>
+     <div><label>EtherType après VLAN</label><input value="0x0800 — IPv4" disabled></div>
+    </div>
+    <div class="actions">
+     <button class="btn" id="rebuild">Reconstruire la trame</button>
+     <button class="btn secondary" id="reset">Réinitialiser</button>
+    </div>
+    <p id="error" class="bad" role="alert"></p>
+   </div>
+
+   <div>
+    <div class="card">
+     <h2>La trame Ethernet II construite</h2>
+     <p class="sub">Clique sur un champ pour lire sa fonction et repérer ses octets dans l'hexadécimal.</p>
+     <div class="frame-scroll"><div class="framebar" id="frameBar"></div></div>
+     <div class="legend">
+      <span><i class="dot" style="background:#ffe0a3"></i>Adresses MAC</span>
+      <span><i class="dot" style="background:#f4e5a5"></i>Type</span>
+      <span><i class="dot" style="background:#c9edcf"></i>Charge utile</span>
+      <span><i class="dot" style="background:#f4c6c9"></i>Contrôle FCS</span>
+     </div>
+     <div class="detailbox" id="fieldDetail"><b>Adresse MAC destination</b><p>Adresse physique de l'interface destinataire sur le réseau local.</p></div>
+    </div>
+    <div class="card">
+     <h2>Vue hexadécimale de la trame</h2>
+     <p class="sub">Chaque groupe représente un octet. Les octets sont cliquables.</p>
+     <div class="hex" id="hexView"></div>
+     <div class="actions"><button class="btn secondary" id="copyHex">Copier l'hexadécimal</button></div>
+    </div>
+    <div class="card">
+     <h2>Mesures et tailles</h2>
+     <div class="metrics">
+      <div class="metric"><strong id="payloadSize">—</strong><small>Données applicatives (octets)</small></div>
+      <div class="metric"><strong id="ipSize">—</strong><small>Paquet IPv4 (octets)</small></div>
+      <div class="metric"><strong id="frameSize">—</strong><small>Trame MAC (octets)</small></div>
+      <div class="metric"><strong id="wireSize">—</strong><small>Avec préambule + SFD (octets)</small></div>
+     </div>
+     <div id="sizeExplain" class="note" style="margin-top:12px"></div>
+    </div>
+   </div>
+  </div>
+  <div class="card">
+   <h2>Détail des unités de données (PDU)</h2>
+   <div class="grid3">
+    <div><h3>Transport — segment / datagramme</h3><div id="transportBreakdown"></div></div>
+    <div><h3>Réseau — paquet IPv4</h3><div id="ipBreakdown"></div></div>
+    <div><h3>Liaison — trame Ethernet</h3><div id="ethBreakdown"></div></div>
+   </div>
+  </div>
+ </section>
+
+ <section class="panel" id="transmit">
+  <div class="card">
+   <h2>Simulation de transmission et de désencapsulation</h2>
+   <p class="sub">Fais progresser la trame de l'émetteur vers le destinataire, puis observe la remontée des couches.</p>
+   <div class="track">
+    <div class="host"><div class="pc">🖥️</div><b>PC émetteur</b><div id="hostSrc" class="sub">192.168.1.10</div></div>
+    <div class="switch">▰<br><small>Switch</small></div>
+    <div class="host"><div class="pc">🖥️</div><b>PC destinataire</b><div id="hostDst" class="sub">192.168.1.20</div></div>
+   </div>
+   <div class="transmission-layout">
+    <div>
+     <h3>Déroulement de la transmission</h3>
+     <div class="packet"><i id="packetProgress"></i></div>
+     <div class="steps" id="stepList"></div>
+     <div class="detailbox" id="transmitInfo"><b>Prêt à transmettre.</b><p>La trame construite dans l'onglet précédent sera utilisée ici.</p></div>
+    </div>
+    <aside class="tx-osi">
+     <h3>Couches OSI sollicitées</h3>
+     <p class="sub">Les couches actives s'allument en même temps que l'étape de transmission.</p>
+     <div id="txOsiStack">
+      <div class="tx-layer l7" data-tx-layer="7"><span class="tx-num">7</span><b>Application</b><span class="tx-state"></span></div>
+      <div class="tx-layer l6" data-tx-layer="6"><span class="tx-num">6</span><b>Présentation</b><span class="tx-state"></span></div>
+      <div class="tx-layer l5" data-tx-layer="5"><span class="tx-num">5</span><b>Session</b><span class="tx-state"></span></div>
+      <div class="tx-layer l4" data-tx-layer="4"><span class="tx-num">4</span><b>Transport</b><span class="tx-state"></span></div>
+      <div class="tx-layer l3" data-tx-layer="3"><span class="tx-num">3</span><b>Réseau</b><span class="tx-state"></span></div>
+      <div class="tx-layer l2" data-tx-layer="2"><span class="tx-num">2</span><b>Liaison</b><span class="tx-state"></span></div>
+      <div class="tx-layer l1" data-tx-layer="1"><span class="tx-num">1</span><b>Physique</b><span class="tx-state"></span></div>
+     </div>
+     <div class="tx-legend">Rose : couches hautes · Jaune : transport · Vert : réseau · Bleu : liaison · Violet : physique</div>
+    </aside>
+   </div>
+   <div class="actions">
+    <button class="btn" id="nextStep">Étape suivante</button>
+    <button class="btn secondary" id="autoPlay">Lecture automatique</button>
+    <button class="btn secondary" id="restartAnim">Recommencer</button>
+   </div>
+  </div>
+  <div class="card">
+   <h2>Ce que fait le commutateur</h2>
+   <div class="note">Un commutateur Ethernet de couche 2 apprend les adresses MAC sources et consulte sa table MAC pour décider sur quel port transmettre une trame. Il ne remplace pas le routeur et ne réalise pas le routage IP.</div>
+  </div>
+ </section>
+
+ <section class="panel" id="quiz">
+  <div class="card">
+   <h2>Défi — analyser une trame Ethernet</h2>
+   <p class="sub">Réponds aux questions à partir de la trame générée dans l'onglet « Construire une trame ».</p>
+   <div id="quizQuestions"></div>
+   <div class="actions"><button class="btn" id="checkQuiz">Vérifier mes réponses</button><button class="btn secondary" id="newQuiz">Nouvelle série</button></div>
+   <div id="quizResult" style="margin-top:12px" aria-live="polite"></div>
+  </div>
+ </section>
+ <footer>Simulateur pédagogique STI2D – SIN · Ethernet II / IPv4 · Les valeurs sont calculées localement dans le navigateur.</footer>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const layers={
+7:["Application","Services réseau accessibles aux logiciels : HTTP, DNS, DHCP, MQTT…","Données"],
+6:["Présentation","Représentation des données : encodage, chiffrement et compression. Dans TCP/IP, ces fonctions sont souvent intégrées aux applications.","Données"],
+5:["Session","Organisation et gestion du dialogue entre applications : ouverture, maintien et reprise d'une session.","Données"],
+4:["Transport","Communication logique entre processus. TCP fournit un flux fiable et ordonné ; UDP fournit des datagrammes sans garantie de livraison.","Segment (TCP) / Datagramme (UDP)"],
+3:["Réseau","Adressage logique et acheminement entre réseaux. Ici, le paquet utilise IPv4.","Paquet"],
+2:["Liaison de données","Communication sur le lien local : adresses MAC, type de protocole transporté et contrôle d'intégrité FCS.","Trame"],
+1:["Physique","Transmission des bits sous forme de signaux électriques, optiques ou radio. Le préambule et le SFD synchronisent le récepteur Ethernet.","Bits"]
+};
+document.querySelectorAll(".layer").forEach(el=>el.addEventListener("click",()=>{
+ document.querySelectorAll(".layer").forEach(x=>x.classList.remove("selected"));el.classList.add("selected");
+ const n=el.dataset.layer,L=layers[n];$("layerDetail").innerHTML=`<b>Couche ${n} — ${L[0]}</b><p>${L[1]}</p><b>PDU :</b> ${L[2]}`;
+}));
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));
+ document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id===b.dataset.tab));
+}));
+const enc=s=>new TextEncoder().encode(s);
+const hex=n=>n.toString(16).padStart(2,"0").toUpperCase();
+const word=n=>[n>>8&255,n&255];
+const dword=n=>[(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255];
+function parseMac(s){if(!/^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$/.test(s))throw Error("Adresse MAC invalide. Format attendu : AA:BB:CC:DD:EE:FF.");return s.split(":").map(x=>parseInt(x,16))}
+function parseIp(s){let a=s.split(".");if(a.length!==4||a.some(x=>!/^\d+$/.test(x)||+x<0||+x>255))throw Error("Adresse IPv4 invalide.");return a.map(Number)}
+function checksum(bytes){let sum=0;for(let i=0;i<bytes.length;i+=2)sum+=(bytes[i]<<8)|(bytes[i+1]||0);while(sum>>16)sum=(sum&65535)+(sum>>>16);return (~sum)&65535}
+function crc32(bytes){let crc=0xffffffff;for(const b of bytes){crc^=b;for(let k=0;k<8;k++)crc=(crc&1)?(crc>>>1)^0xedb88320:crc>>>1}return (crc^0xffffffff)>>>0}
+function put16(a,n){a.push(...word(n&65535))}
+function makePacket(){
+ const srcMac=parseMac($("srcMac").value.trim()),dstMac=parseMac($("dstMac").value.trim());
+ const srcIp=parseIp($("srcIp").value.trim()),dstIp=parseIp($("dstIp").value.trim());
+ const msg=enc($("message").value),proto=$("transport").value,sp=+$("srcPort").value,dp=+$("dstPort").value;
+ if(!sp||!dp||sp>65535||dp>65535||sp<1||dp<1)throw Error("Les ports doivent être compris entre 1 et 65535.");
+ let th=[],protoNum=proto==="TCP"?6:17;
+ if(proto==="TCP"){
+  put16(th,sp);put16(th,dp);th.push(...dword(0x12345678),...dword(0));th.push(0x50,0x18);put16(th,64240);put16(th,0);put16(th,0);
+  const pseudo=[...srcIp,...dstIp,0,6,...word(th.length+msg.length)];
+  const c=checksum([...pseudo,...th,...msg]);th[16]=c>>8;th[17]=c&255;
+ }else{
+  put16(th,sp);put16(th,dp);put16(th,th.length+msg.length+8);put16(th,0);
+  const pseudo=[...srcIp,...dstIp,0,17,...word(th.length+msg.length)];
+  const c=checksum([...pseudo,...th,...msg])||0xffff;th[6]=c>>8;th[7]=c&255;
+ }
+ const trans=[...th,...msg],ipLen=20+trans.length;
+ if(ipLen>1500)throw Error("Paquet IPv4 trop volumineux pour une MTU Ethernet standard de 1500 octets.");
+ let ip=[0x45,0, ...word(ipLen),0x12,0x34,0x40,0,64,protoNum,0,0,...srcIp,...dstIp];
+ const ipcs=checksum(ip);ip[10]=ipcs>>8;ip[11]=ipcs&255;
+ const ipPacket=[...ip,...trans];
+ const tagged=$("vlan").checked,vid=+$("vlanId").value;
+ if(tagged&&(vid<1||vid>4094))throw Error("Le VID VLAN doit être compris entre 1 et 4094.");
+ const l2=[...dstMac,...srcMac];
+ if(tagged){l2.push(0x81,0x00,...word(vid&0x0fff));}
+ l2.push(0x08,0x00);
+ let payload=[...ipPacket],minData=tagged?42:46,pad=Math.max(0,minData-payload.length);payload.push(...Array(pad).fill(0));
+ const withoutFcs=[...l2,...payload],crc=crc32(withoutFcs);
+ const fcs=[crc&255,(crc>>>8)&255,(crc>>>16)&255,(crc>>>24)&255];
+ const frame=[...withoutFcs,...fcs];
+ const fields=[];let offset=0;
+ function field(name,desc,cls,bytes){fields.push({name,desc,cls,start:offset,end:offset+bytes.length,bytes});offset+=bytes.length}
+ field("MAC destination","Adresse MAC de l'interface destinataire sur le lien Ethernet local. Elle est utilisée par les commutateurs pour acheminer la trame.", "f-dst",dstMac);
+ field("MAC source","Adresse MAC de l'interface qui émet la trame. Le commutateur peut apprendre cette adresse sur le port d'entrée.","f-src",srcMac);
+ if(tagged){field("TPID 802.1Q","Valeur 0x8100 : indique la présence d'une étiquette VLAN.", "f-tag",[0x81,0]);field("TCI / VLAN","Champ de contrôle VLAN : priorité PCP (3 bits), DEI (1 bit), VID (12 bits). Ici, le VID est "+vid+".","f-tag",word(vid&0x0fff))}
+ field("EtherType","Valeur 0x0800 : le champ de données transporte un paquet IPv4. 0x86DD indiquerait IPv6 ; 0x0806 ARP.","f-type",[8,0]);
+ field("Paquet IPv4","Charge utile Ethernet : en-tête IPv4 (20 octets ici) suivi du segment "+proto+".","f-payload",payload);
+ field("FCS","Frame Check Sequence : CRC-32 Ethernet calculé sur les octets de la trame depuis l'adresse MAC destination jusqu'au dernier octet de données/padding. Transmis octet de poids faible en premier.","f-fcs",fcs);
+ return {frame,fields,srcMac,dstMac,srcIp,dstIp,msg,th,trans,ip,ipPacket,payload,pad,tagged,crc,proto,sp,dp};
+}
+let current=null,selectedField=0;
+function render(){
+ try{
+  $("error").textContent="";$("vlanRow").style.display=$("vlan").checked?"grid":"none";
+  current=makePacket();
+  const {frame,fields,frame:bytes,ipPacket,msg,pad,tagged,proto,th,trans}=current;
+  $("frameBar").innerHTML=fields.map((f,i)=>`<div class="framefield ${f.cls} ${i===selectedField?'active':''}" data-field="${i}">${f.name}<small>${f.end-f.start} octet(s)</small></div>`).join("");
+  document.querySelectorAll(".framefield").forEach(el=>el.addEventListener("click",()=>selectField(+el.dataset.field)));
+  const active=fields[selectedField]||fields[0];if(active)showField(active);
+  $("hexView").innerHTML=frame.map((b,i)=>`<span class="byte ${i>=active.start&&i<active.end?'active':''}" data-byte="${i}" title="Octet ${i}: 0x${hex(b)}">${hex(b)}</span>`).join(" ");
+  document.querySelectorAll(".byte").forEach(el=>el.addEventListener("click",()=>{const pos=+el.dataset.byte;const idx=fields.findIndex(f=>pos>=f.start&&pos<f.end);if(idx>=0)selectField(idx)}));
+  $("payloadSize").textContent=msg.length;$("ipSize").textContent=ipPacket.length;$("frameSize").textContent=frame.length;$("wireSize").textContent=frame.length+8;
+  $("sizeExplain").innerHTML=`La charge utile Ethernet fait <b>${Math.max(tagged?42:46,ipPacket.length)} octets</b>${pad?`, dont ${pad} octet(s) de bourrage (padding)`:""}. La trame MAC fait ${frame.length} octets${tagged?" avec VLAN":""}, du MAC destination au FCS. Le préambule (7 octets) et le SFD (1 octet) sont ajoutés sur le support : ils ne sont pas comptés dans la taille de la trame MAC.`;
+  $("transportBreakdown").innerHTML=proto==="TCP"?`<p><b>En-tête TCP : 20 octets</b><br>Ports, numéros de séquence/acquittement, offset, flags, fenêtre, checksum, pointeur urgent.</p><p><b>Charge utile : ${msg.length} octet(s)</b></p>`:`<p><b>En-tête UDP : 8 octets</b><br>Port source, port destination, longueur, checksum.</p><p><b>Charge utile : ${msg.length} octet(s)</b></p>`;
+  $("ipBreakdown").innerHTML=`<p><b>En-tête IPv4 : 20 octets</b><br>Version/IHL, DSCP/ECN, longueur totale, identification, flags/fragmentation, TTL, protocole, checksum, IP source et destination.</p><p><b>Paquet : ${ipPacket.length} octets</b></p>`;
+  $("ethBreakdown").innerHTML=`<p><b>En-tête Ethernet : ${tagged?18:14} octets</b><br>MAC destination, MAC source${tagged?", TPID et TCI VLAN":""}, EtherType.</p><p><b>Charge utile : ${Math.max(tagged?42:46,ipPacket.length)} octets</b><br><b>FCS : 4 octets</b></p>`;
+  $("hostSrc").textContent=$("srcIp").value;$("hostDst").textContent=$("dstIp").value;
+  resetAnimation();
+ }catch(e){$("error").textContent=e.message}
+}
+function selectField(i){selectedField=i;renderSelectionOnly()}
+function renderSelectionOnly(){
+ if(!current)return;const f=current.fields[selectedField];if(!f)return;showField(f);
+ document.querySelectorAll(".framefield").forEach((el,i)=>el.classList.toggle("active",i===selectedField));
+ document.querySelectorAll(".byte").forEach(el=>{let n=+el.dataset.byte;el.classList.toggle("active",n>=f.start&&n<f.end)});
+}
+function showField(f){$("fieldDetail").innerHTML=`<b>${f.name} — octets ${f.start} à ${f.end-1}</b><p>${f.desc}</p><b>Valeur :</b> ${f.bytes.map(hex).join(" ")}`}
+["srcMac","dstMac","srcIp","dstIp","transport","appProto","srcPort","dstPort","message","vlan","vlanId"].forEach(id=>$(id).addEventListener("input",()=>{if(id==="vlan")$("vlanRow").style.display=$("vlan").checked?"grid":"none";render()}));
+$("rebuild").addEventListener("click",render);
+$("reset").addEventListener("click",()=>{ $("srcMac").value="02:1A:2B:3C:4D:5E";$("dstMac").value="08:00:27:12:34:56";$("srcIp").value="192.168.1.10";$("dstIp").value="192.168.1.20";$("transport").value="TCP";$("appProto").value="HTTP";$("srcPort").value=50124;$("dstPort").value=80;$("message").value="GET /index.html HTTP/1.1";$("vlan").checked=false;$("vlanId").value=20;selectedField=0;render()});
+$("copyHex").addEventListener("click",async()=>{if(!current)return;let s=current.frame.map(hex).join(" ");try{await navigator.clipboard.writeText(s);$("copyHex").textContent="Copié !";setTimeout(()=>$("copyHex").textContent="Copier l'hexadécimal",1500)}catch(e){$("copyHex").textContent="Copie indisponible"}});
+const animSteps=[
+ ["Application","Le logiciel fournit le message à envoyer. Les octets du texte sont encodés en UTF-8.",[7,6,5]],
+ ["Transport","La couche transport ajoute un en-tête TCP ou UDP : ports source et destination, et autres champs de contrôle.",[4]],
+ ["Réseau","IPv4 ajoute les adresses IP source et destination, le TTL, le protocole supérieur et le checksum d'en-tête.",[3]],
+ ["Liaison","Ethernet ajoute les adresses MAC, l'EtherType (et éventuellement le tag VLAN), puis le FCS. Le padding complète au minimum requis.",[2]],
+ ["Physique","Le préambule et le SFD permettent la synchronisation. Les bits sont émis sur le support physique.",[1]],
+ ["Commutateur","Le switch lit la MAC source pour apprendre son emplacement et consulte sa table MAC pour transférer la trame vers le bon port.",[2]],
+ ["Réception Ethernet","La carte réseau du destinataire vérifie la trame et son FCS, puis remet le paquet IP à la couche réseau.",[2]],
+ ["Désencapsulation IP","IPv4 examine l'adresse IP destination et le champ Protocole, puis transmet le segment à TCP ou UDP.",[3]],
+ ["Désencapsulation transport","TCP ou UDP utilise le port de destination pour remettre les données au bon processus applicatif.",[4]],
+ ["Application destinataire","L'application reçoit le message initial : les en-têtes ajoutés aux couches inférieures ont été interprétés puis retirés.",[7,6,5]]
+];
+let step=0,timer=null;
+function renderSteps(){
+ $("stepList").innerHTML=animSteps.map((s,i)=>`<span class="step ${i<step?'done':i===step?'current':''}">${i+1}. ${s[0]}</span>`).join("");
+ $("packetProgress").style.width=(step/(animSteps.length-1)*100)+"%";
+ const idx=step===0?0:Math.min(step-1,animSteps.length-1);
+ const activeLayers=animSteps[idx][2]||[];
+ $("transmitInfo").innerHTML=`<b>${step===0?"Prêt : "+animSteps[0][0]:animSteps[idx][0]}</b><p>${step===0?"Clique sur « Étape suivante » pour démarrer.":animSteps[idx][1]}</p><p><b>Couches concernées :</b> ${activeLayers.length?activeLayers.map(n=>n+" — "+layers[n][0]).join(" · "):"Aucune couche identifiée"}</p>`;
+ document.querySelectorAll(".tx-layer").forEach(el=>{
+  const n=+el.dataset.txLayer,active=activeLayers.includes(n);
+  const used=animSteps.slice(0,step).some(x=>(x[2]||[]).includes(n));
+  el.classList.toggle("active",active);
+  el.classList.toggle("done",!active&&used);
+  el.querySelector(".tx-state").textContent=active?"ACTIVE":(!active&&used?"vue":"");
+ });
+ $("nextStep").disabled=step>=animSteps.length;
+}
+function next(){if(step<animSteps.length){step++;renderSteps()}if(step>=animSteps.length&&timer){clearInterval(timer);timer=null;$("autoPlay").textContent="Lecture automatique"}}
+function resetAnimation(){if(timer){clearInterval(timer);timer=null}$("autoPlay").textContent="Lecture automatique";step=0;renderSteps()}
+$("nextStep").addEventListener("click",next);
+$("restartAnim").addEventListener("click",resetAnimation);
+$("autoPlay").addEventListener("click",()=>{if(timer){clearInterval(timer);timer=null;$("autoPlay").textContent="Lecture automatique"}else{if(step>=animSteps.length)resetAnimation();$("autoPlay").textContent="Pause";timer=setInterval(()=>{next();if(step>=animSteps.length){clearInterval(timer);timer=null;$("autoPlay").textContent="Lecture automatique"}},1300)}});
+const quizBank=[
+ {q:"Quel champ Ethernet indique le protocole transporté dans la charge utile ?",a:["Adresse MAC source","EtherType","FCS"],c:1,e:"EtherType identifie le protocole de couche supérieure : 0x0800 pour IPv4, 0x86DD pour IPv6."},
+ {q:"Quelle est la taille de l'en-tête Ethernet II sans VLAN ?",a:["8 octets","14 octets","18 octets"],c:1,e:"6 octets MAC destination + 6 octets MAC source + 2 octets EtherType = 14 octets."},
+ {q:"Quel champ détecte les erreurs de transmission au niveau Ethernet ?",a:["TTL","Port destination","FCS"],c:2,e:"Le FCS contient un CRC-32 calculé sur la trame, hors préambule/SFD."},
+ {q:"Quelle unité de données est associée à IPv4 ?",a:["Paquet","Trame","Bit"],c:0,e:"La couche réseau transporte des paquets IP."},
+ {q:"À quoi sert l'adresse MAC destination ?",a:["À identifier le processus TCP","À acheminer la trame sur le lien local","À déterminer le TTL"],c:1,e:"La MAC destination est utilisée sur le réseau local, notamment par les commutateurs Ethernet."},
+ {q:"Combien d'octets de données minimum une trame Ethernet classique doit-elle transporter ?",a:["14","46","64"],c:1,e:"Le champ données Ethernet doit faire au moins 46 octets pour une trame MAC minimale de 64 octets, FCS compris."}
+];
+let quizSet=[];
+function makeQuiz(){quizSet=[...quizBank].sort(()=>Math.random()-.5).slice(0,4);$("quizResult").textContent="";$("quizQuestions").innerHTML=quizSet.map((q,i)=>`<div class="quizq"><b>${i+1}. ${q.q}</b>${q.a.map((a,j)=>`<label><input type="radio" name="q${i}" value="${j}" style="width:auto;margin-right:6px">${a}</label>`).join("")}<div id="ex${i}"></div></div>`).join("")}
+$("checkQuiz").addEventListener("click",()=>{let score=0;quizSet.forEach((q,i)=>{let v=document.querySelector(`input[name="q${i}"]:checked`);let ok=v&&+v.value===q.c;if(ok)score++;$("ex"+i).innerHTML=`<p class="${ok?'good':'bad'}">${ok?'Correct.':'À revoir.'} ${q.e}</p>`});$("quizResult").innerHTML=`<h3>Résultat : ${score} / ${quizSet.length}</h3>`});
+$("newQuiz").addEventListener("click",makeQuiz);
+const pduInfo={
+ data:{
+  title:"Données — couche Application",
+  body:"Le message est produit par une application (par exemple une requête HTTP, une mesure MQTT ou une requête DNS). À ce stade, il s'agit du contenu utile à transmettre : texte, commande, mesure ou fichier.",
+  keep:"Les données applicatives constituent la charge utile qui sera progressivement encapsulée par les couches inférieures.",
+  example:"Exemple : « GET /index.html » ou « Température = 21,5 °C »."
+ },
+ segment:{
+  title:"Segment TCP — couche Transport",
+  body:"TCP ajoute un en-tête de transport aux données. Celui-ci contient notamment les ports source et destination, les numéros de séquence et d'acquittement, les indicateurs (SYN, ACK, FIN…), la fenêtre et le checksum.",
+  keep:"Les ports permettent d'identifier les applications ou services concernés. TCP assure un transport fiable, ordonné et avec contrôle de flux.",
+  example:"Exemple : port destination 80 pour un serveur HTTP. Avec UDP, on parle plutôt de datagramme UDP ; son en-tête est plus court (8 octets)."
+ },
+ packet:{
+  title:"Paquet IP — couche Réseau",
+  body:"IP ajoute son propre en-tête. En IPv4, il contient notamment les adresses IP source et destination, la durée de vie (TTL), le champ Protocole (TCP = 6, UDP = 17), la longueur totale et le checksum de l'en-tête.",
+  keep:"Les adresses IP servent à acheminer les paquets entre réseaux. Les routeurs examinent l'en-tête IP pour choisir le prochain saut.",
+  example:"Exemple : 192.168.1.10 → 192.168.1.20. Le paquet IP est placé dans la charge utile de la trame Ethernet."
+ },
+ frame:{
+  title:"Trame Ethernet — couche Liaison",
+  body:"Ethernet ajoute un en-tête avec l'adresse MAC destination, l'adresse MAC source et le champ EtherType. En présence d'un VLAN 802.1Q, une étiquette de 4 octets est insérée. En fin de trame, le FCS (CRC-32) permet de détecter certaines erreurs.",
+  keep:"Les adresses MAC assurent la livraison sur le lien local. Un commutateur Ethernet apprend les MAC sources et utilise la MAC destination pour transférer la trame.",
+  example:"Exemple : EtherType 0x0800 signifie que la charge utile contient un paquet IPv4. La trame Ethernet II standard fait au minimum 64 octets, FCS compris."
+ },
+ bits:{
+  title:"Bits — couche Physique",
+  body:"La trame est convertie en une suite de bits, puis transmise sous forme de signaux électriques, optiques ou radio selon le support et la technologie Ethernet utilisée. Le préambule et le SFD précèdent la trame pour permettre la synchronisation.",
+  keep:"La couche physique ne manipule plus des adresses IP ou des ports : elle transmet des symboles ou des bits sur le support.",
+  example:"Exemple : sur Ethernet cuivre, les bits sont codés en signaux électriques sur une paire torsadée ; sur fibre, ils sont représentés par des signaux optiques."
+ }
+};
+document.querySelectorAll(".pdu-block").forEach(btn=>btn.addEventListener("click",()=>{
+ document.querySelectorAll(".pdu-block").forEach(x=>x.classList.toggle("selected",x===btn));
+ const d=pduInfo[btn.dataset.pdu];
+ $("pduExplanation").innerHTML=`<b>${d.title}</b><p>${d.body}</p><b>À retenir :</b> ${d.keep}<p><b>${d.example}</b></p>`;
+}));
+render();makeQuiz();
+</script>
+</body>
+</html>

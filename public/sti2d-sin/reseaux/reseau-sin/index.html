@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur réseau SIN — V2</title>
+<style>
+:root{--bg:#0b1220;--panel:#131f33;--panel2:#1b2a42;--line:#30445f;--txt:#edf4ff;--muted:#a9bad1;--cyan:#55d6e8;--green:#57d69a;--orange:#ffbd69;--red:#ff7474;--blue:#76a9ff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#09111f,#101d31);color:var(--txt);font:15px/1.45 system-ui,Segoe UI,Arial,sans-serif}
+header{padding:24px clamp(16px,4vw,48px) 18px;border-bottom:1px solid var(--line);background:#0d1728}
+h1{margin:0;font-size:clamp(24px,3vw,34px)}header p{margin:6px 0 0;color:var(--muted)}
+main{max-width:1450px;margin:auto;padding:20px clamp(12px,3vw,32px) 50px}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.panel{background:rgba(19,31,51,.96);border:1px solid var(--line);border-radius:15px;padding:17px;box-shadow:0 10px 30px #0002}
+.panel h2{font-size:19px;margin:0 0 13px}.panel h3{font-size:16px;margin:14px 0 8px}
+.topology{display:grid;grid-template-columns:1fr 150px 1fr;gap:10px;align-items:center;min-height:270px}
+.lan{background:#101b2d;border:1px solid #38516f;border-radius:13px;padding:12px;text-align:center}
+.lan strong{color:var(--cyan);display:block;margin-bottom:7px}.devices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.device{border:1px solid #3a506c;background:#1a2a40;border-radius:9px;padding:9px 5px;cursor:pointer;transition:.15s}
+.device:hover,.device.selected{border-color:var(--cyan);box-shadow:0 0 0 2px #55d6e833}
+.device .pc{font-size:22px}.device b{display:block}.device small{color:var(--muted);font-size:11px}
+.switch{margin:9px auto 0;padding:7px;background:#263c58;border-radius:7px;width:110px;font-size:12px}
+.router{border:2px solid var(--orange);border-radius:12px;padding:14px 7px;text-align:center;background:#302b26}
+.router .ico{font-size:30px}.router b{display:block}.router small{color:#f5d6a8}
+.link{height:4px;background:var(--blue);border-radius:4px;position:relative}.link:after{content:"";position:absolute;right:0;top:-4px;border-left:9px solid var(--blue);border-top:6px solid transparent;border-bottom:6px solid transparent}
+.hint{font-size:12px;color:var(--muted);text-align:center;margin-top:10px}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+label{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+input,select{width:100%;background:#0c1728;color:var(--txt);border:1px solid #405674;border-radius:7px;padding:9px;font:inherit}
+input:focus,select:focus{outline:2px solid #55d6e866;border-color:var(--cyan)}
+.field{min-width:0}.wide{grid-column:1/-1}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{border:0;border-radius:8px;padding:10px 14px;background:var(--cyan);color:#071522;font-weight:700;cursor:pointer}
+button.secondary{background:#2a405d;color:var(--txt);border:1px solid #49617f}
+button:disabled{opacity:.4;cursor:not-allowed}
+.info{background:#0e1a2c;border:1px solid #30445f;border-radius:9px;padding:11px;margin-top:10px}
+.info strong{color:var(--cyan)}.muted{color:var(--muted)}
+.pill{display:inline-block;border-radius:99px;padding:3px 8px;font-size:11px;background:#243b56;color:#cfe2ff;margin:2px}
+.good{color:var(--green)}.warn{color:var(--orange)}.bad{color:var(--red)}
+.resultgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.metric{background:#0e1a2c;border:1px solid #30445f;border-radius:9px;padding:9px}.metric span{display:block;color:var(--muted);font-size:11px}.metric b{font-size:14px;overflow-wrap:anywhere}
+.machine-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.machine{padding:10px;border:1px solid #344b68;border-radius:9px;background:#101b2d;cursor:pointer}.machine.active{border-color:var(--cyan)}
+.machine b{display:block}.machine small{color:var(--muted)}
+.stepbar{height:7px;background:#26384f;border-radius:10px;overflow:hidden;margin:10px 0}.stepbar div{height:100%;width:0;background:var(--cyan);transition:width .3s}
+.log{height:205px;overflow:auto;background:#091321;border:1px solid #263c55;border-radius:9px;padding:10px;font:12px/1.55 ui-monospace,Consolas,monospace}
+.log div{padding:2px 0;border-bottom:1px solid #ffffff0c}.log .ok{color:var(--green)}.log .err{color:var(--red)}.log .active{color:var(--orange)}
+.diagnostic{border-left:4px solid var(--orange);background:#28251f;padding:12px;border-radius:7px;margin:9px 0}.diagnostic.goodbox{border-color:var(--green);background:#142b27}
+.binary{font:12px ui-monospace,monospace;overflow-wrap:anywhere;color:#d4e5ff}
+.hidden{display:none!important}
+#routerNode{cursor:pointer;user-select:none}#routerNode:hover,#routerNode:focus{outline:2px solid var(--cyan);outline-offset:3px}
+.osi-stack{display:grid;gap:5px;margin-top:9px}
+.osi-layer{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border:1px solid #344b68;border-radius:7px;background:#101b2d;opacity:.48;transition:all .25s}
+.osi-layer b{font-size:12px;white-space:nowrap}.osi-layer span{font-size:11px;color:var(--muted);text-align:right}
+.osi-layer.active{opacity:1;border-color:var(--cyan);background:#153348;box-shadow:0 0 0 1px #55d6e833}
+.osi-layer.active b{color:var(--cyan)}
+.osi-layer.router-active{border-color:var(--orange);background:#302b26}
+@media(max-width:560px){.osi-layer{align-items:flex-start;flex-direction:column}.osi-layer span{text-align:left}}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.topology{grid-template-columns:1fr 100px 1fr}.panel{padding:13px}}
+@media(max-width:560px){.topology{grid-template-columns:1fr;gap:8px}.link{height:3px;width:55%;margin:auto;transform:rotate(90deg);margin-top:12px;margin-bottom:12px}.controls{grid-template-columns:1fr}.wide{grid-column:auto}}
+</style>
+</head>
+<body>
+<header><h1>Simulateur réseau informatique — V2</h1><p>STI2D · SIN — Adressage IPv4, masques CIDR, passerelles et diagnostic guidé</p></header>
+<main>
+<div class="grid">
+<section class="panel">
+<h2>1. Topologie du réseau</h2>
+<div class="topology">
+ <div class="lan"><strong>LAN A · Réseau 1</strong><div class="devices">
+  <div class="device selected" data-pc="0"><div class="pc">▣</div><b>PC1</b><small id="top0">192.168.1.10/24</small></div>
+  <div class="device" data-pc="1"><div class="pc">▣</div><b>PC2</b><small id="top1">192.168.1.20/24</small></div>
+ </div><div class="switch">⇄ Switch A</div></div>
+ <div><div class="link"></div><div class="router" id="routerNode" role="button" tabindex="0" title="Cliquer pour afficher les paramètres du routeur"><div class="ico">⇄</div><b>Routeur R1</b><small>Cliquer pour configurer</small></div><div class="link"></div></div>
+ <div class="lan"><strong>LAN B · Réseau 2</strong><div class="devices">
+  <div class="device" data-pc="2"><div class="pc">▣</div><b>PC3</b><small id="top2">192.168.2.10/24</small></div>
+  <div class="device" data-pc="3"><div class="pc">▣</div><b>PC4</b><small id="top3">192.168.2.20/24</small></div>
+ </div><div class="switch">⇄ Switch B</div></div>
+</div>
+<div class="hint">Deux réseaux locaux reliés par un routeur · Sélectionne un PC ou clique sur le routeur pour afficher ses paramètres.</div>
+<div class="info hidden" id="routerPanel">
+ <strong>Paramètres du routeur R1</strong>
+ <div class="controls" style="margin-top:10px">
+  <div class="field"><label for="rA">Interface LAN A · Adresse IP</label><input id="rA" value="192.168.1.1"></div>
+  <div class="field"><label for="rAp">Interface LAN A · Préfixe CIDR</label><select id="rAp"></select></div>
+  <div class="field"><label for="rB">Interface LAN B · Adresse IP</label><input id="rB" value="192.168.2.1"></div>
+  <div class="field"><label for="rBp">Interface LAN B · Préfixe CIDR</label><select id="rBp"></select></div>
+ </div>
+ <div class="actions"><button id="applyRouter">Appliquer les paramètres du routeur</button><button class="secondary" id="closeRouter">Fermer</button></div>
+ <div id="routerFeedback" class="muted" style="margin-top:8px">Le routeur possède une interface dans chaque réseau local.</div>
+ <h3>Table de routage simplifiée</h3><div id="routingTable"></div>
+</div>
+<h3>Machines disponibles</h3><div class="machine-list" id="machineList"></div>
+</section>
+<section class="panel">
+<h2>2. Configuration IP</h2>
+<div class="info"><strong id="selectedName">PC1</strong> <span class="muted">— paramètres de la machine sélectionnée</span></div>
+<div class="controls" style="margin-top:12px">
+ <div class="field"><label for="ip">Adresse IPv4</label><input id="ip" value="192.168.1.10" spellcheck="false"></div>
+ <div class="field"><label for="cidr">Masque CIDR</label><select id="cidr"></select></div>
+ <div class="field"><label for="gateway">Passerelle par défaut</label><input id="gateway" value="192.168.1.1" spellcheck="false"></div>
+ <div class="field"><label>Masque décimal correspondant</label><input id="maskDecimal" readonly value="255.255.255.0"></div>
+</div>
+<div class="actions"><button id="apply">Appliquer la configuration</button><button class="secondary" id="reset">Réinitialiser le réseau</button></div>
+<div id="configFeedback" class="info muted">Modifie les paramètres puis applique la configuration.</div>
+<h3>Informations calculées pour <span id="calcName">PC1</span></h3>
+<div class="resultgrid" id="networkInfo"></div>
+<div class="info"><strong>Adresse en binaire</strong><div class="binary" id="binaryInfo"></div></div>
+</section>
+<section class="panel">
+<h2>3. Tester une communication</h2>
+<div class="controls">
+ <div class="field"><label for="source">Machine source</label><select id="source"><option value="0">PC1</option><option value="1">PC2</option><option value="2">PC3</option><option value="3">PC4</option></select></div>
+ <div class="field"><label for="dest">Machine destination</label><select id="dest"><option value="0">PC1</option><option value="1" selected>PC2</option><option value="2">PC3</option><option value="3">PC4</option></select></div>
+ <div class="field wide"><label for="protocol">Protocole à simuler</label>
+  <select id="protocol">
+   <option value="arp">ARP · résolution d’adresse</option>
+   <option value="icmp" selected>ICMP · ping</option>
+   <option value="http">HTTP · requête web sur TCP</option>
+   <option value="dns">DNS · résolution de nom sur UDP</option>
+  </select>
+ </div>
+ <div class="field wide hidden" id="httpOptions"><label for="httpPath">Ressource demandée (chemin HTTP)</label><input id="httpPath" value="/index.html"></div>
+ <div class="field wide hidden" id="dnsOptions"><label for="dnsName">Nom de domaine à résoudre</label><input id="dnsName" value="www.exemple.fr"></div>
+</div>
+<div class="info muted" id="protocolDescription">ICMP : test de connectivité avec une requête Echo et une réponse Echo Reply.</div>
+<div class="actions"><button id="start">Lancer l’échange</button><button class="secondary" id="next" disabled>Étape suivante</button><button class="secondary" id="auto" disabled>Lecture automatique</button><button class="secondary" id="stop" disabled>Réinitialiser le test</button></div>
+<div class="stepbar"><div id="progress"></div></div>
+<div class="info" id="stepText">Choisis un protocole puis lance une simulation pour observer les échanges et les couches OSI.</div>
+<h3>Journal de communication</h3><div class="log" id="log"><div class="muted">En attente d'un test…</div></div>
+<h3>Modèle OSI en temps réel</h3>
+<p class="muted" style="margin-top:-5px">Les couches sollicitées s’illuminent au fur et à mesure du déplacement du paquet.</p>
+<div id="osiState" class="info">En attente d'une communication.</div>
+<div class="osi-stack" id="osiStack">
+ <div class="osi-layer" data-layer="7"><b>7 · Application</b><span>Services réseau · requête utilisateur</span></div>
+ <div class="osi-layer" data-layer="6"><b>6 · Présentation</b><span>Format et représentation des données</span></div>
+ <div class="osi-layer" data-layer="5"><b>5 · Session</b><span>Gestion du dialogue</span></div>
+ <div class="osi-layer" data-layer="4"><b>4 · Transport</b><span id="osiTransport">TCP / UDP · ports</span></div>
+ <div class="osi-layer" data-layer="3"><b>3 · Réseau</b><span>IP · adressage et routage</span></div>
+ <div class="osi-layer" data-layer="2"><b>2 · Liaison</b><span>Trame locale · commutation</span></div>
+ <div class="osi-layer" data-layer="1"><b>1 · Physique</b><span>Transmission des bits</span></div>
+</div>
+</section>
+<section class="panel">
+<h2>4. Diagnostic guidé</h2>
+<p class="muted" style="margin-top:-5px">Le simulateur analyse chaque côté de la communication. Il explique les décisions prises avec le masque propre à chaque machine.</p>
+<div id="diagnostic"><div class="diagnostic">Lance un test pour obtenir un diagnostic détaillé.</div></div>
+<h3>À retenir</h3>
+<div class="info"><strong>Règle essentielle</strong><p style="margin:5px 0 0">Une machine utilise son propre masque pour déterminer si la destination est locale ou distante. Deux postes peuvent donc prendre des décisions différentes si leurs masques sont incohérents.</p></div>
+</section>
+</div>
+</main>
+<script>
+const prefixes=[8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30];
+const pcs=[
+ {name:'PC1',ip:'192.168.1.10',p:24,gw:'192.168.1.1',lan:'A'},
+ {name:'PC2',ip:'192.168.1.20',p:24,gw:'192.168.1.1',lan:'A'},
+ {name:'PC3',ip:'192.168.2.10',p:24,gw:'192.168.2.1',lan:'B'},
+ {name:'PC4',ip:'192.168.2.20',p:24,gw:'192.168.2.1',lan:'B'}
+];
+const router={A:'192.168.1.1',B:'192.168.2.1',pA:24,pB:24};
+let selected=0,steps=[],stepIndex=0,timer=null;
+const $=id=>document.getElementById(id);
+function ipNum(s){if(!/^\d{1,3}(\.\d{1,3}){3}$/.test(s))return null;let a=s.split('.').map(Number);if(a.some(x=>x<0||x>255))return null;return (((a[0]*256+a[1])*256+a[2])*256+a[3])>>>0}
+function ipStr(n){return [n>>>24,(n>>>16)&255,(n>>>8)&255,n&255].join('.')}
+function mask(p){return (0xffffffff << (32-p))>>>0}
+function net(ip,p){let n=ipNum(ip);return n===null?null:(n&mask(p))>>>0}
+function broadcast(ip,p){let n=ipNum(ip);return n===null?null:((n&mask(p))|(~mask(p)>>>0))>>>0}
+function bits(ip){return ip.split('.').map(x=>(+x).toString(2).padStart(8,'0')).join('.')}
+function validHost(ip,p){let n=ipNum(ip);if(n===null)return false;let b=broadcast(ip,p),r=net(ip,p);return n!==r&&n!==b}
+function local(from,to){let a=pcs[from],b=pcs[to];return net(a.ip,a.p)===net(b.ip,a.p)}
+function sameLan(a,b){return pcs[a].lan===pcs[b].lan}
+function gatewayValid(i){let x=pcs[i];return ipNum(x.gw)!==null && net(x.gw,x.p)===net(x.ip,x.p)}
+function renderRouter(){
+ $('rA').value=router.A;$('rB').value=router.B;$('rAp').value=router.pA;$('rBp').value=router.pB;
+ const a=ipNum(router.A),b=ipNum(router.B);
+ $('routingTable').innerHTML=`<div class="resultgrid">
+ <div class="metric"><span>Réseau directement connecté · LAN A</span><b>${a===null?'Adresse invalide':ipStr(net(router.A,router.pA))+'/'+router.pA}</b></div>
+ <div class="metric"><span>Réseau directement connecté · LAN B</span><b>${b===null?'Adresse invalide':ipStr(net(router.B,router.pB))+'/'+router.pB}</b></div>
+ </div><p class="muted" style="font-size:12px">Le routeur connaît directement les deux réseaux raccordés à ses interfaces.</p>`;
+}
+function render(){
+ $('machineList').innerHTML=pcs.map((x,i)=>`<div class="machine ${i===selected?'active':''}" data-pick="${i}"><b>${x.name}</b><small>${x.ip}/${x.p} · passerelle ${x.gw}</small></div>`).join('');
+ document.querySelectorAll('[data-pick],[data-pc]').forEach(el=>el.onclick=()=>select(+((el.dataset.pick??el.dataset.pc))));
+ pcs.forEach((x,i)=>{$('top'+i).textContent=x.ip+'/'+x.p});
+ $('selectedName').textContent=pcs[selected].name;$('calcName').textContent=pcs[selected].name;
+ $('ip').value=pcs[selected].ip;$('cidr').value=pcs[selected].p;$('gateway').value=pcs[selected].gw;
+ $('maskDecimal').value=ipStr(mask(pcs[selected].p));
+ $('networkInfo').innerHTML=makeMetrics(selected);
+ $('binaryInfo').textContent=bits(pcs[selected].ip)+'  /  '+bits(ipStr(mask(pcs[selected].p)));
+}
+function makeMetrics(i){let x=pcs[i],n=net(x.ip,x.p),b=broadcast(x.ip,x.p),h=Math.max(0,Math.pow(2,32-x.p)-2);return [
+ ['Adresse réseau',n===null?'—':ipStr(n)],['Broadcast',b===null?'—':ipStr(b)],['Préfixe CIDR','/'+x.p],['Nombre d’hôtes utilisables',h.toLocaleString('fr-FR')],['Plage d’hôtes',n===null?'—':(h?ipStr(n+1)+' – '+ipStr(b-1):'Aucune')],['Masque décimal',ipStr(mask(x.p))]
+].map(([a,b])=>`<div class="metric"><span>${a}</span><b>${b}</b></div>`).join('')}
+function select(i){selected=i;render();$('configFeedback').textContent='Machine sélectionnée : '+pcs[i].name}
+$('cidr').innerHTML=prefixes.map(p=>`<option value="${p}">/${p} · ${ipStr(mask(p))}</option>`).join('');
+$('rAp').innerHTML=$('rBp').innerHTML=prefixes.map(p=>`<option value="${p}">/${p} · ${ipStr(mask(p))}</option>`).join('');
+$('cidr').onchange=()=>{$('maskDecimal').value=ipStr(mask(+$('cidr').value))};
+$('apply').onclick=()=>{
+ let ip=$('ip').value.trim(),gw=$('gateway').value.trim(),p=+$('cidr').value;
+ if(ipNum(ip)===null||ipNum(gw)===null){$('configFeedback').innerHTML='<span class="bad">Adresse IP ou passerelle invalide.</span>';return}
+ pcs[selected]={...pcs[selected],ip,p,gw};render();
+ let msg=validHost(ip,p)?'Configuration appliquée.':'Attention : cette adresse correspond à l’adresse réseau ou de broadcast du sous-réseau.';
+ $('configFeedback').innerHTML=validHost(ip,p)?'<span class="good">'+msg+'</span>':'<span class="bad">'+msg+'</span>';
+};
+$('reset').onclick=()=>{pcs[0]={name:'PC1',ip:'192.168.1.10',p:24,gw:'192.168.1.1',lan:'A'};pcs[1]={name:'PC2',ip:'192.168.1.20',p:24,gw:'192.168.1.1',lan:'A'};pcs[2]={name:'PC3',ip:'192.168.2.10',p:24,gw:'192.168.2.1',lan:'B'};pcs[3]={name:'PC4',ip:'192.168.2.20',p:24,gw:'192.168.2.1',lan:'B'};selected=0;resetTest();render();$('configFeedback').textContent='Configuration initiale restaurée.'};
+function log(msg,cls=''){let d=document.createElement('div');d.className=cls;d.textContent=msg;$('log').appendChild(d);$('log').scrollTop=$('log').scrollHeight}
+function buildTest(){
+ let s=+$('source').value,d=+$('dest').value,a=pcs[s],b=pcs[d],arr=[];
+ const proto=$('protocol').value;
+ const push=(t,c='')=>arr.push({t,c});
+ const names={arp:'ARP',icmp:'ICMP',http:'HTTP/TCP',dns:'DNS/UDP'};
+ arr.protocol=proto;
+ if(s===d && proto!=='arp'){push('Source et destination identiques : sélectionne deux machines différentes.','err');return arr}
+ if(ipNum(a.ip)===null||!validHost(a.ip,a.p)){push(`${a.name} possède une adresse IPv4 invalide, réseau ou broadcast. Corrige sa configuration.`,'err');return arr}
+ if(proto!=='arp'&&(ipNum(b.ip)===null||!validHost(b.ip,b.p))){push(`${b.name} possède une adresse IPv4 invalide, réseau ou broadcast. Corrige sa configuration.`,'err');return arr}
+ const isLocal=proto==='arp'?sameLan(s,d):local(s,d);
+ const nextHop=isLocal?b.ip:a.gw;
+ const nextHopName=isLocal?b.name:'la passerelle du LAN '+a.lan;
+ const remotePhysical=!sameLan(s,d);
+ push(`Début de la simulation ${names[proto]} : ${a.name} (${a.ip}) → ${proto==='dns'?$ ('dnsName').value:b.ip}.`);
+ if(proto==='http'){
+   push(`Couche application : le navigateur prépare une requête HTTP GET ${$('httpPath').value||'/'} HTTP/1.1 avec l’en-tête Host: serveur.exemple.fr.`);
+   push('La requête HTTP est confiée à TCP : port source éphémère 51514, port destination 80.');
+ }else if(proto==='dns'){
+   push(`Couche application : demande de résolution du nom ${$('dnsName').value||'www.exemple.fr'}.`);
+   push('DNS encapsule la requête dans UDP : port source 53000, port destination 53. Le message contient une question de type A (adresse IPv4).');
+ }else if(proto==='icmp'){
+   push('ICMP prépare une requête Echo Request (type 8, code 0) pour tester la connectivité.');
+ }else{
+   push('ARP cherche à associer une adresse IPv4 à une adresse MAC sur le réseau local. ARP ne traverse pas les routeurs.');
+ }
+ if(proto==='arp'){
+   if(remotePhysical){
+     push(`La destination est sur un autre LAN. ARP ne peut pas résoudre directement ${b.ip} : la machine source doit résoudre l’adresse MAC de sa passerelle ${a.gw}.`);
+     if(!gatewayValid(s)||a.gw!==router[a.lan])push(`Échec : la passerelle ${a.gw} est absente ou incorrecte pour le LAN ${a.lan}.`,'err');
+     else{
+       push(`Requête ARP broadcast : « Qui possède ${a.gw} ? Répondez à ${a.ip} ».`,'active');
+       push(`Le routeur répond avec l’adresse MAC de son interface LAN ${a.lan}. La résolution ARP de la passerelle est réussie.`,'ok');
+       push('La résolution ARP de la passerelle est terminée. ARP ne fournit pas, à lui seul, la communication IP de bout en bout.','ok');
+     }
+   }else{
+     push(`Requête ARP broadcast sur le LAN ${a.lan} : « Qui possède ${b.ip} ? Répondez à ${a.ip} ».`,'active');
+     push(`Tous les équipements du LAN reçoivent la requête ; seul ${b.name}, qui possède ${b.ip}, répond avec son adresse MAC.`,'ok');
+     push(`La machine source mémorise l’association IPv4 → MAC dans son cache ARP. Résolution réussie.`,'ok');
+   }
+   arr.success=!arr.some(x=>x.c==='err');return arr;
+ }
+ const forwardLocal=local(s,d);
+ push(`Décision IP : avec son masque /${a.p}, ${a.name} calcule le réseau ${ipStr(net(a.ip,a.p))}/${a.p}.`);
+ push(`${a.name} considère la destination comme ${forwardLocal?'locale':'distante'}.`);
+ let pathOK=true,viaRouter=false;
+ if(forwardLocal){
+   push('La destination est considérée comme locale : le poste doit résoudre l’adresse MAC de la destination par ARP puis transmettre la trame au switch.');
+   if(remotePhysical){push('Mais les deux machines sont sur des LAN physiques différents : une communication directe de niveau 2 est impossible. Le masque est incohérent avec la topologie.','err');pathOK=false}
+   else push(`ARP résout l’adresse de ${b.name}, puis le switch du LAN ${a.lan} achemine la trame.`,'ok');
+ }else{
+   push(`La destination est distante : ${a.name} doit envoyer le paquet à sa passerelle ${a.gw}, et non chercher l’adresse MAC du PC distant.`);
+   if(!gatewayValid(s)) {push(`La passerelle ${a.gw} n’appartient pas au sous-réseau de ${a.name}.`,'err');pathOK=false}
+   else if(a.gw!==router[a.lan]){push(`La passerelle ${a.gw} ne correspond pas à l’interface du routeur sur le LAN ${a.lan}.`,'err');pathOK=false}
+   else{
+     push(`ARP diffuse une requête pour ${a.gw}. Le routeur répond : la MAC de la passerelle est connue.`,'ok');
+     push(`Le paquet IP est transmis au routeur. Celui-ci consulte sa table de routage et transmet le paquet vers le LAN ${b.lan}.`,'ok');
+     viaRouter=true;
+   }
+ }
+ if(pathOK&&viaRouter)push(`Sur le LAN ${b.lan}, le routeur résout l’adresse MAC de ${b.name} par ARP puis lui transmet la trame.`,'ok');
+ if(pathOK){
+   if(proto==='http'){
+     push(`${b.name} reçoit le segment TCP sur le port 80. Le serveur web traite la requête GET et prépare une réponse HTTP/1.1 200 OK.`,'ok');
+     push('La réponse HTTP contient notamment un en-tête (Content-Type) et le contenu de /index.html. TCP assure le transport fiable et le réassemblage.');
+   }else if(proto==='dns'){
+     push(`${b.name} reçoit le datagramme UDP sur le port 53. Le service DNS recherche ${$('dnsName').value||'www.exemple.fr'} dans sa base ou son cache.`,'ok');
+     push('Réponse DNS : message de réponse avec l’adresse IPv4 associée (exemple pédagogique : 203.0.113.25). UDP transporte la réponse vers le port source 53000.');
+   }else{
+     push(`${b.name} reçoit le paquet IP et traite la requête ICMP Echo Request.`,'ok');
+     push(`${b.name} prépare une réponse ICMP Echo Reply (type 0, code 0).`);
+   }
+   const returnLocal=local(d,s);
+   push(`Pour le retour, ${b.name} utilise son propre masque /${b.p}. Il considère la source comme ${returnLocal?'locale':'distante'}.`);
+   if(returnLocal){
+     if(remotePhysical){push('Le retour est considéré local alors que la source est sur un autre LAN : le poste ne sollicite pas sa passerelle. Le retour échoue.','err');pathOK=false}
+     else push('La réponse est transmise directement sur le LAN de destination, puis reçue par la source.','ok');
+   }else if(!gatewayValid(d)||b.gw!==router[b.lan]){
+     push(`La passerelle de ${b.name} est absente ou incorrecte : le retour ne peut pas être routé.`,'err');pathOK=false;
+   }else if(remotePhysical){
+     push(`La réponse est envoyée à la passerelle ${b.gw}, puis routée vers le LAN ${a.lan}.`,'ok');
+   }else{
+     push('Le poste tente de faire passer par le routeur une destination située sur son propre LAN : masque incohérent, retour non conforme.','err');pathOK=false;
+   }
+ }
+ if(pathOK){
+   if(proto==='http')push('Échange HTTP terminé : la page est reçue par le client.','ok');
+   else if(proto==='dns')push('Échange DNS terminé : le nom de domaine a été résolu.','ok');
+   else push('Échange ICMP terminé : réponse Echo Reply reçue, ping réussi.','ok');
+ }else push(`Échange ${names[proto]} interrompu : aucune réponse exploitable n’est reçue par la source.`,'err');
+ arr.success=pathOK;return arr;
+}
+function diagnose(s,d,arr){
+ let a=pcs[s],b=pcs[d],issues=[];
+ if(s===d)issues.push('Choisis deux machines différentes.');
+ [s,d].forEach(i=>{let x=pcs[i];if(ipNum(x.ip)===null)issues.push(`${x.name} : adresse IPv4 invalide.`);else if(!validHost(x.ip,x.p))issues.push(`${x.name} : l’adresse IP est l’adresse réseau ou broadcast de son sous-réseau.`)});
+ if(s!==d){
+  if(!local(s,d)&&(!gatewayValid(s)||a.gw!==router[a.lan]))issues.push(`${a.name} : la destination est distante selon son masque /${a.p}, mais sa passerelle est absente ou incorrecte.`);
+  if(local(s,d)&&!sameLan(s,d))issues.push(`${a.name} croit joindre directement la destination (masque /${a.p}), alors qu’elle se trouve sur un autre LAN. Le routeur ne sera pas sollicité.`);
+  if(!local(d,s)&&(!gatewayValid(d)||b.gw!==router[b.lan]))issues.push(`${b.name} : pour répondre, il considère la source distante avec son masque /${b.p}, mais sa passerelle est absente ou incorrecte.`);
+  if(local(d,s)&&!sameLan(s,d))issues.push(`${b.name} considère la source comme locale avec son masque /${b.p} : il tentera une réponse directe sur son LAN, sans routeur.`);
+  if(local(s,d)!==local(d,s))issues.push(`Décision asymétrique : ${a.name} et ${b.name} ne prennent pas la même décision réseau. Vérifie les masques et les plages d’adresses.`);
+  if(sameLan(s,d)&&!local(s,d))issues.push(`Les deux machines sont sur le même LAN, mais ${a.name} considère ${b.name} comme distante. Le masque /${a.p} est probablement trop restrictif.`);
+  if(!sameLan(s,d)&&local(s,d))issues.push(`Les deux machines sont sur des LAN distincts, mais ${a.name} croit que la destination est locale. Son masque /${a.p} est probablement trop large.`);
+ }
+ $('diagnostic').innerHTML=issues.length?issues.map(x=>`<div class="diagnostic">${x}</div>`).join(''):'<div class="diagnostic goodbox"><strong class="good">Aucune anomalie détectée.</strong><br>Les adresses, les masques et les passerelles permettent un échange cohérent dans ce scénario.</div>';
+}
+function updateOSI(textStep){
+ const t=textStep.toLowerCase(),p=$('protocol').value;let layers=[],phase='';
+ if(p==='arp'){
+   layers=[2,1];phase='ARP : résolution IPv4 → MAC sur le réseau local (couches 2 et 1)';
+ }else if(p==='icmp'){
+   layers=[3,2,1];phase='ICMP : couche réseau, puis encapsulation Ethernet et transmission';
+ }else if(p==='http'){
+   layers=[7,4,3,2,1];phase='HTTP (7) → TCP (4) → IP (3) → Ethernet (2) → bits (1)';
+ }else if(p==='dns'){
+   layers=[7,4,3,2,1];phase='DNS (7) → UDP (4) → IP (3) → Ethernet (2) → bits (1)';
+ }
+ if(t.includes('routeur')||t.includes('routage'))phase+=' · traitement du paquet par le routeur (couche 3)';
+ document.querySelectorAll('.osi-layer').forEach(el=>{el.classList.toggle('active',layers.includes(+el.dataset.layer));el.classList.remove('router-active')});
+ if(t.includes('routeur')||t.includes('routage'))document.querySelector('.osi-layer[data-layer="3"]').classList.add('router-active');
+ $('osiState').textContent=phase;
+}
+function showStep(){if(stepIndex>=steps.length)return;let st=steps[stepIndex];updateOSI(st.t);$('stepText').textContent=st.t;$('stepText').className='info '+(st.c==='err'?'bad':st.c==='ok'?'good':'');log(st.t,st.c);$('progress').style.width=((stepIndex+1)/steps.length*100)+'%';$('next').disabled=stepIndex>=steps.length-1;if(stepIndex>=steps.length-1){$('auto').disabled=true;$('stop').disabled=false}}
+$('start').onclick=()=>{clearInterval(timer);let s=+$('source').value,d=+$('dest').value;steps=buildTest();stepIndex=0;$('log').innerHTML='';$('progress').style.width='0%';$('next').disabled=false;$('auto').disabled=false;$('stop').disabled=false;if($('protocol').value==='arp'){$('diagnostic').innerHTML='<div class="diagnostic goodbox"><strong class="good">Diagnostic ARP</strong><br>ARP résout une adresse IPv4 en adresse MAC sur le LAN. Si la destination est distante, le poste résout la MAC de sa passerelle, jamais celle du PC distant.</div>';}else diagnose(s,d,steps);showStep()};
+$('next').onclick=()=>{if(stepIndex<steps.length-1){stepIndex++;showStep()}};
+$('auto').onclick=()=>{if(timer){clearInterval(timer);timer=null;$('auto').textContent='Lecture automatique';return}$('auto').textContent='Pause';timer=setInterval(()=>{if(stepIndex<steps.length-1){stepIndex++;showStep()}else{clearInterval(timer);timer=null;$('auto').textContent='Lecture automatique'}},1250)};
+function resetTest(){clearInterval(timer);timer=null;steps=[];stepIndex=0;$('log').innerHTML='<div class="muted">En attente d’un test…</div>';$('stepText').textContent='Configure les machines puis lance un ping pour observer le cheminement de la requête et de la réponse.';$('progress').style.width='0%';$('next').disabled=$('auto').disabled=$('stop').disabled=true;$('auto').textContent='Lecture automatique';$('diagnostic').innerHTML='<div class="diagnostic">Lance un test pour obtenir un diagnostic détaillé.</div>';$('osiState').textContent='En attente d’une communication.';document.querySelectorAll('.osi-layer').forEach(el=>el.classList.remove('active','router-active'))}
+$('stop').onclick=resetTest;
+function updateProtocolOptions(){
+ const p=$('protocol').value;
+ $('httpOptions').classList.toggle('hidden',p!=='http');
+ $('dnsOptions').classList.toggle('hidden',p!=='dns');
+ const descriptions={
+  arp:'ARP : associe une adresse IPv4 à une adresse MAC sur le réseau local. Les requêtes ARP sont diffusées en broadcast et ne sont pas routées.',
+  icmp:'ICMP : test de connectivité IP avec Echo Request et Echo Reply (ping).',
+  http:'HTTP : requête web GET transportée par TCP, généralement vers le port 80 dans cette simulation pédagogique.',
+  dns:'DNS : résolution d’un nom de domaine en adresse IP, ici transportée par UDP vers le port 53.'
+ };
+ $('protocolDescription').textContent=descriptions[p];$('osiTransport').textContent=p==='http'?'TCP · ports source et destination':p==='dns'?'UDP · ports source et destination':p==='icmp'?'ICMP · pas de ports TCP/UDP':'ARP · pas de couche transport';
+ $('start').textContent=p==='arp'?'Lancer la résolution ARP':p==='icmp'?'Lancer le ping':p==='http'?'Envoyer la requête HTTP':'Lancer la requête DNS';
+}
+$('protocol').onchange=updateProtocolOptions;
+updateProtocolOptions();
+function openRouter(){ $('routerPanel').classList.remove('hidden');renderRouter(); }
+$('routerNode').onclick=openRouter;
+$('routerNode').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRouter();}};
+$('closeRouter').onclick=()=>$('routerPanel').classList.add('hidden');
+$('applyRouter').onclick=()=>{
+ const a=$('rA').value.trim(),b=$('rB').value.trim(),pa=+$('rAp').value,pb=+$('rBp').value;
+ if(ipNum(a)===null||ipNum(b)===null||!validHost(a,pa)||!validHost(b,pb)){
+  $('routerFeedback').innerHTML='<span class="bad">Vérifie les adresses : chaque interface doit avoir une IPv4 hôte valide pour son préfixe.</span>';return;
+ }
+ if(net(a,pa)===net(b,pb)){
+  $('routerFeedback').innerHTML='<span class="bad">Les deux interfaces ne doivent pas appartenir au même sous-réseau dans cette topologie pédagogique.</span>';return;
+ }
+ router.A=a;router.B=b;router.pA=pa;router.pB=pb;renderRouter();
+ $('routerFeedback').innerHTML='<span class="good">Paramètres du routeur appliqués.</span>';
+};
+renderRouter();
+render();
+</script>
+</body></html>

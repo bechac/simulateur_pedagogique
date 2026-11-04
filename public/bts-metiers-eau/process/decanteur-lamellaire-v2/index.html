@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulateur dynamique – Décanteur lamellaire</title>
+<style>
+:root{--navy:#14394f;--blue:#168ac5;--ink:#193344;--muted:#607786;--line:#dce5eb;--bg:#eef3f7;--gold:#c79a4e;--green:#23856f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,Segoe UI,Arial,sans-serif}
+header{background:var(--navy);color:white;padding:22px max(20px,calc((100% - 1450px)/2))}header .eyebrow{font-size:11px;letter-spacing:.14em;color:#a9dbe7;font-weight:800;text-transform:uppercase}h1{font-size:clamp(22px,3vw,32px);margin:4px 0}header p{margin:0;color:#d5e5ec;max-width:950px}
+main{max-width:1450px;margin:20px auto;padding:0 16px 36px;display:grid;grid-template-columns:330px minmax(0,1fr);gap:17px}
+.panel{background:white;border:1px solid var(--line);border-radius:15px;box-shadow:0 5px 18px #183b5010}.controls{padding:17px;height:max-content}.section-title{font-size:16px;font-weight:800;margin:0 0 12px}.group{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#1680a9;font-weight:800;margin:15px 0 4px}
+.control{padding:8px 0;border-top:1px solid #edf1f4}.control label{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:700}.control output{color:#087eae;font-variant-numeric:tabular-nums}input[type=range]{width:100%;accent-color:#168ac5;margin:8px 0 1px}.hint{font-size:10px;color:var(--muted)}
+.actions{display:flex;gap:8px;margin-top:14px}.btn{border:0;border-radius:9px;padding:10px 12px;font-weight:750;cursor:pointer}.primary{background:#147fae;color:white}.secondary{background:#e9f1f5;color:#24485b}
+.content{display:grid;gap:16px;min-width:0}.visual{padding:15px 17px 10px;overflow:hidden}.topline{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.status{font-size:11px;font-weight:800;background:#e8f6f1;color:#16836c;padding:5px 10px;border-radius:99px}
+.scene{width:100%;display:block;height:auto}.legend{display:flex;gap:14px;flex-wrap:wrap;padding:3px 8px 7px;font-size:11px;color:var(--muted)}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.metric{padding:12px}.metric small{display:block;color:var(--muted);font-size:10px;font-weight:750}.metric strong{display:block;font-size:21px;margin-top:4px;font-variant-numeric:tabular-nums}.metric em{font-style:normal;color:var(--muted);font-size:10px}
+.results{padding:16px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.result{background:#f4f8fa;border-radius:9px;padding:10px}.result span{display:block;color:var(--muted);font-size:10px}.result b{font-size:16px;font-variant-numeric:tabular-nums}
+.check{margin-top:10px;padding:10px 12px;border-radius:9px;font-size:12px}.ok{background:#e8f6f1;color:#176b58}.warn{background:#fff2e4;color:#945812}.bad{background:#fdeeee;color:#a43e3e}
+.chart{padding:15px 17px}.chart svg{width:100%;height:auto;display:block}.note{padding:13px 16px;color:#536a79;font-size:11px}.note b{color:#28485b}
+@media(max-width:950px){main{grid-template-columns:1fr}.controls{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}.controls>.section-title,.group,.actions{grid-column:1/-1}}
+@media(max-width:620px){main{padding:0 9px}.controls{display:block}.metrics{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:repeat(2,1fr)}.visual{padding:10px 6px}}
+</style></head><body>
+<header><div class="eyebrow">Outil pédagogique interactif</div><h1>Décantation classique et décantation lamellaire</h1><p>Visualisez la chute des particules, l’effet des lamelles inclinées et l’influence de la surface projetée sur le débit admissible et le rendement théorique, à partir des relations de votre tableur.</p></header>
+<main>
+<aside class="panel controls">
+<h2 class="section-title">Paramètres du procédé</h2>
+<div class="group">Loi de Stokes</div>
+<div class="control"><label for="rhoS">Masse volumique solide ρs <output id="rhoSv">1 200 kg/m³</output></label><input id="rhoS" type="range" min="1010" max="3000" step="10" value="1200"></div>
+<div class="control"><label for="rhoL">Masse volumique liquide ρl <output id="rhoLv">1 000 kg/m³</output></label><input id="rhoL" type="range" min="950" max="1200" step="5" value="1000"></div>
+<div class="control"><label for="mu">Viscosité dynamique μ <output id="muv">1,03 mPa·s</output></label><input id="mu" type="range" min=".5" max="5" step=".01" value="1.03"></div>
+<div class="control"><label for="dp">Diamètre des particules <output id="dpv">100 µm</output></label><input id="dp" type="range" min="10" max="300" step="5" value="100"></div>
+<div class="group">Bassin de décantation</div>
+<div class="control"><label for="L">Longueur <output id="Lv">8 m</output></label><input id="L" type="range" min="2" max="20" step=".25" value="8"></div>
+<div class="control"><label for="W">Largeur <output id="Wv">4,25 m</output></label><input id="W" type="range" min="1" max="12" step=".25" value="4.25"></div>
+<div class="control"><label for="H">Hauteur d'eau <output id="Hv">1,75 m</output></label><input id="H" type="range" min=".8" max="5" step=".05" value="1.75"></div>
+<div class="group">Module lamellaire</div>
+<div class="control"><label for="hl">Hauteur d'une lamelle <output id="hlv">1,50 m</output></label><input id="hl" type="range" min=".3" max="2.5" step=".05" value="1.5"></div>
+<div class="control"><label for="angle">Inclinaison α <output id="anglev">60°</output></label><input id="angle" type="range" min="45" max="75" step="1" value="60"></div>
+<div class="control"><label for="n">Nombre de lamelles <output id="nv">25</output></label><input id="n" type="range" min="0" max="100" step="1" value="25"></div>
+<div class="control"><label for="Q0">Débit réel sans lamelles <output id="Q0v">100 m³/h</output></label><input id="Q0" type="range" min="5" max="1500" step="5" value="100"></div>
+<div class="control"><label for="Q1">Débit réel avec lamelles <output id="Q1v">310 m³/h</output></label><input id="Q1" type="range" min="5" max="3000" step="5" value="310"></div>
+<div class="actions"><button class="btn primary" id="play">Pause animation</button><button class="btn secondary" id="reset">Réinitialiser</button></div>
+</aside>
+<section class="content">
+<div class="panel visual">
+<div class="topline"><h2 class="section-title">Visualisation animée en coupe</h2><span class="status" id="status">Décantation en cours</span></div>
+<svg class="scene" viewBox="0 0 940 480" role="img" aria-label="Comparaison animée entre un décanteur classique et un décanteur lamellaire">
+<defs>
+ <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#b7edf4" stop-opacity=".8"/><stop offset="1" stop-color="#56b9d5" stop-opacity=".85"/></linearGradient>
+ <clipPath id="plainClip"><rect x="45" y="125" width="370" height="260" rx="3"/></clipPath>
+ <clipPath id="lamClip"><rect x="520" y="125" width="370" height="260" rx="3"/></clipPath>
+</defs>
+<!-- titles -->
+<text x="230" y="50" text-anchor="middle" font-size="18" font-weight="800" fill="#24485b">Décanteur classique</text>
+<text x="705" y="50" text-anchor="middle" font-size="18" font-weight="800" fill="#24485b">Décanteur lamellaire</text>
+<text x="230" y="73" text-anchor="middle" font-size="12" fill="#617786">Surface utile = surface au miroir</text>
+<text x="705" y="73" text-anchor="middle" font-size="12" fill="#617786">Surface utile = surface projetée des lamelles</text>
+<!-- inlet and outlet arrows -->
+<path d="M15 165 H45" stroke="#168ac5" stroke-width="10" stroke-linecap="round"/><path d="M415 165 H450" stroke="#168ac5" stroke-width="10" stroke-linecap="round"/>
+<path d="M490 165 H520" stroke="#168ac5" stroke-width="10" stroke-linecap="round"/><path d="M890 165 H925" stroke="#168ac5" stroke-width="10" stroke-linecap="round"/>
+<text x="17" y="145" font-size="11" fill="#168ac5">Entrée</text><text x="370" y="145" font-size="11" fill="#168ac5">Sortie</text>
+<text x="495" y="145" font-size="11" fill="#168ac5">Entrée</text><text x="850" y="145" font-size="11" fill="#168ac5">Sortie</text>
+<!-- tanks -->
+<rect x="45" y="125" width="370" height="260" fill="url(#water)" stroke="#456879" stroke-width="5"/>
+<rect x="520" y="125" width="370" height="260" fill="url(#water)" stroke="#456879" stroke-width="5"/>
+<path d="M47 128 H413 M522 128 H888" stroke="#e8fbff" stroke-width="4"/>
+<!-- sludge hoppers -->
+<path d="M45 385 H415 L390 420 H70 Z M520 385 H890 L865 420 H545 Z" fill="#c4a16a" stroke="#8e7048" stroke-width="3"/>
+<text x="230" y="443" text-anchor="middle" font-size="11" fill="#795b32">Zone de collecte des boues</text>
+<text x="705" y="443" text-anchor="middle" font-size="11" fill="#795b32">Zone de collecte des boues</text>
+<!-- lamella plates, their geometry set by JS -->
+<g id="plates" clip-path="url(#lamClip)"></g>
+<!-- particles -->
+<g id="plainParticles" clip-path="url(#plainClip)"></g>
+<g id="lamParticles" clip-path="url(#lamClip)"></g>
+<!-- labels -->
+<text x="65" y="112" font-size="11" fill="#617786">Eau chargée</text><text x="540" y="112" font-size="11" fill="#617786">Eau chargée</text>
+<path d="M610 93 L645 155" stroke="#a27d42" stroke-width="1.5" stroke-dasharray="4 3"/><text x="650" y="93" font-size="12" fill="#8a682f" font-weight="700">Lamelles inclinées</text>
+<text x="230" y="470" text-anchor="middle" font-size="11" fill="#617786">Chute verticale des particules</text><text x="705" y="470" text-anchor="middle" font-size="11" fill="#617786">Trajet raccourci jusqu'à une surface de dépôt</text>
+</svg>
+<div class="legend"><span><i class="dot" style="background:#168ac5"></i>Eau</span><span><i class="dot" style="background:#98713e"></i>Particules / boues</span><span><i class="dot" style="background:#d4e0e5;border:1px solid #78909c"></i>Lamelles</span></div>
+</div>
+<div class="metrics">
+<div class="panel metric"><small>Vitesse de Stokes</small><strong id="vStokes">—</strong><em>m/h</em></div>
+<div class="panel metric"><small>Surface projetée lamelles</small><strong id="sproj">—</strong><em>m²</em></div>
+<div class="panel metric"><small>Débit maximal lamellaire</small><strong id="qmaxL">—</strong><em>m³/h</em></div>
+<div class="panel metric"><small>Rendement théorique lamellaire</small><strong id="rendL">—</strong><em>%</em></div>
+</div>
+<div class="panel results">
+<h2 class="section-title">Résultats du dimensionnement</h2>
+<div class="grid">
+<div class="result"><span>Surface au miroir S</span><b id="sMirror">—</b></div>
+<div class="result"><span>Volume du bassin V</span><b id="vol">—</b></div>
+<div class="result"><span>Surface d'une lamelle</span><b id="sOne">—</b></div>
+<div class="result"><span>Surface projetée totale</span><b id="sProj2">—</b></div>
+<div class="result"><span>Qmax sans lamelles</span><b id="qmax0">—</b></div>
+<div class="result"><span>Qmax avec lamelles</span><b id="qmax1">—</b></div>
+<div class="result"><span>Vitesse Hazen réelle sans lamelles</span><b id="hazen0">—</b></div>
+<div class="result"><span>Vitesse Hazen réelle avec lamelles</span><b id="hazen1">—</b></div>
+<div class="result"><span>Gain de surface équivalente</span><b id="gain">—</b></div>
+</div>
+<div class="check" id="check0"></div><div class="check" id="check1"></div>
+</div>
+<div class="panel chart">
+<h2 class="section-title">Influence du débit sur le rendement théorique</h2>
+<svg id="chart" viewBox="0 0 820 270" role="img" aria-label="Graphique du rendement théorique en fonction du débit"></svg>
+</div>
+<div class="panel note"><b>Modèle de calcul repris du fichier Excel :</b> loi de Stokes : Vs = g(ρs − ρl)d²/(18μ), convertie en m/h. Surface au miroir S = L × l ; volume V = S × H. Surface d'une lamelle = hauteur × largeur ; surface projetée totale Sproj = N × Slamelle × cos(α). Débit maximal sans lamelles Qmax = Vs × S ; avec lamelles Qmax = Vs × Sproj. Vitesse de Hazen réelle = Qréel / surface utile ; rendement théorique = Vs / vH × 100. Ce modèle applique la loi de Stokes et les relations de Hazen telles qu'elles sont posées dans ton tableur. Il ne modélise pas la floculation, les interactions entre particules, les turbulences ni le colmatage des lamelles.</div>
+</section></main>
+<script>
+const $=id=>document.getElementById(id),ids=['rhoS','rhoL','mu','dp','L','W','H','hl','angle','n','Q0','Q1'];
+const defaults={rhoS:1200,rhoL:1000,mu:1.03,dp:100,L:8,W:4.25,H:1.75,hl:1.5,angle:60,n:25,Q0:100,Q1:310};
+const f=(v,n=2)=>Number.isFinite(v)?v.toFixed(n).replace('.',','):'—';
+let running=true, particleData=[];
+function calc(){
+ const rs=+$('rhoS').value,rl=+$('rhoL').value,mu=+$('mu').value*1e-3,dp=+$('dp').value*1e-6,L=+$('L').value,W=+$('W').value,H=+$('H').value,hl=+$('hl').value,a=+$('angle').value,n=+$('n').value,Q0=+$('Q0').value,Q1=+$('Q1').value;
+ $('rhoSv').textContent=rs.toLocaleString('fr-FR')+' kg/m³';$('rhoLv').textContent=rl.toLocaleString('fr-FR')+' kg/m³';$('muv').textContent=f(mu*1000,2)+' mPa·s';$('dpv').textContent=f(dp*1e6,0)+' µm';$('Lv').textContent=f(L,2)+' m';$('Wv').textContent=f(W,2)+' m';$('Hv').textContent=f(H,2)+' m';$('hlv').textContent=f(hl,2)+' m';$('anglev').textContent=a+'°';$('nv').textContent=n;$('Q0v').textContent=f(Q0,0)+' m³/h';$('Q1v').textContent=f(Q1,0)+' m³/h';
+ const g=9.81,vs=g*(rs-rl)*dp*dp/(18*mu)*3600,S=L*W,V=S*H,sOne=hl*W,sProj=n*sOne*Math.cos(a*Math.PI/180),qmax0=vs*S,qmax1=vs*sProj,h0=Q0/S,h1=sProj>0?Q1/sProj:Infinity,r0=vs/h0*100,r1=vs/h1*100,gain=sProj/S;
+ $('vStokes').textContent=f(vs,3);$('sproj').textContent=f(sProj,2);$('qmaxL').textContent=f(qmax1,1);$('rendL').textContent=f(r1,1);
+ $('sMirror').textContent=f(S,2)+' m²';$('vol').textContent=f(V,2)+' m³';$('sOne').textContent=f(sOne,2)+' m²';$('sProj2').textContent=f(sProj,2)+' m²';$('qmax0').textContent=f(qmax0,1)+' m³/h';$('qmax1').textContent=f(qmax1,1)+' m³/h';$('hazen0').textContent=f(h0,3)+' m/h';$('hazen1').textContent=sProj>0?f(h1,3)+' m/h':'—';$('gain').textContent=f(gain,2)+' ×';
+ const c0=$('check0');c0.className='check '+(Q0<=qmax0?'ok':'warn');c0.textContent='Décanteur classique : '+(Q0<=qmax0?'débit réel inférieur au débit maximal théorique.':'débit réel supérieur au débit maximal théorique : risque de fuite de particules.');
+ const c1=$('check1');c1.className='check '+(n>0&&Q1<=qmax1?'ok':'warn');c1.textContent=n===0?'Aucune lamelle : le débit maximal lamellaire est nul.':(Q1<=qmax1?'Décanteur lamellaire : débit réel inférieur au débit maximal théorique.':'Décanteur lamellaire : débit réel supérieur au débit maximal théorique : rendement théorique inférieur à 100 %.');
+ drawPlates(n,a);drawChart(vs,S,sProj);
+ window.animData={vs,S,sProj};
+}
+function drawPlates(n,a){let g=$('plates');g.innerHTML='';let count=Math.min(n,40),ang=a*Math.PI/180;for(let i=0;i<count;i++){let x=550+i*8.1,y=335;let dx=95*Math.cos(ang),dy=-95*Math.sin(ang);g.insertAdjacentHTML('beforeend',`<line x1="${x}" y1="${y}" x2="${x+dx}" y2="${y+dy}" stroke="#718c99" stroke-width="5" stroke-linecap="round"/><line x1="${x+2}" y1="${y-2}" x2="${x+dx+2}" y2="${y+dy-2}" stroke="#e5eef2" stroke-width="1.5"/>`)}}
+function drawChart(vs,S,Sp){let svg=$('chart'),max=Math.max(100,Math.ceil(Math.max(vs*S,vs*Sp)/100)*100),w=820,h=270,l=65,r=25,t=20,b=42,iw=w-l-r,ih=h-t-b;let out='';for(let i=0;i<=4;i++){let y=t+ih*i/4,val=max*(1-i/4);out+=`<line x1="${l}" y1="${y}" x2="${w-r}" y2="${y}" stroke="#e5edf1"/><text x="${l-10}" y="${y+4}" text-anchor="end" font-size="11" fill="#617786">${val.toFixed(0)}%</text>`;}let points=[];for(let i=0;i<=40;i++){let q=max*1.2*i/40;let v=q/S;let rr=vs/v*100;points.push(`${l+iw*i/40},${t+ih*(1-Math.min(100,rr)/100)}`)}out+=`<polyline points="${points.join(' ')}" fill="none" stroke="#168ac5" stroke-width="3"/>`;out+=`<text x="${l+iw/2}" y="${h-8}" text-anchor="middle" font-size="12" fill="#617786">Débit appliqué (m³/h)</text><text x="15" y="${t+ih/2}" transform="rotate(-90 15 ${t+ih/2})" text-anchor="middle" font-size="12" fill="#617786">Rendement théorique</text>`;svg.innerHTML=out;}
+function initParticles(){particleData=[];for(let i=0;i<32;i++)particleData.push({x:55+(i*43%350),y:145+(i*31%220),v:.25+(i%5)*.08,r:2+(i%3),side:0});for(let i=0;i<32;i++)particleData.push({x:530+(i*41%350),y:145+(i*29%220),v:.22+(i%5)*.07,r:2+(i%3),side:1});}
+function animate(){let p0=$('plainParticles'),p1=$('lamParticles');p0.innerHTML='';p1.innerHTML='';for(let p of particleData){if(running){p.y+=p.v;if(p.side===1){p.x+=.08;}if(p.y>375){p.y=140;p.x=p.side?530+(Math.random()*350):55+Math.random()*350;}}let el=document.createElementNS('http://www.w3.org/2000/svg','circle');el.setAttribute('cx',p.x);el.setAttribute('cy',p.y);el.setAttribute('r',p.r);el.setAttribute('fill','#98713e');el.setAttribute('opacity','.9');(p.side?p1:p0).appendChild(el);}requestAnimationFrame(animate);}
+ids.forEach(id=>$(id).addEventListener('input',calc));
+$('play').onclick=()=>{running=!running;$('play').textContent=running?'Pause animation':'Reprendre animation';$('status').textContent=running?'Décantation en cours':'Animation en pause'};
+$('reset').onclick=()=>{ids.forEach(id=>$(id).value=defaults[id]);running=true;$('play').textContent='Pause animation';$('status').textContent='Décantation en cours';calc()};
+calc();initParticles();requestAnimationFrame(animate);
+</script></body></html>

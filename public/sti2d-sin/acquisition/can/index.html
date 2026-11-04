@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratoire CAN — STI2D SIN</title>
+<style>
+:root{--bg:#f3f6fa;--panel:#fff;--ink:#172235;--muted:#64748b;--line:#dbe3ee;--blue:#2585c4;--orange:#e39a32;--green:#159568;--red:#d94b55;--navy:#14243b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:linear-gradient(120deg,#14243b,#214b70);color:white;padding:25px max(20px,calc((100vw - 1200px)/2))}
+header h1{margin:0 0 5px;font-size:clamp(24px,4vw,34px)}header p{margin:0;color:#d4e2f0}
+main{max-width:1200px;margin:22px auto;padding:0 16px 40px;display:grid;grid-template-columns:330px 1fr;gap:18px}
+.panel,.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 3px 12px #1722350a}
+.panel{padding:18px;height:max-content;position:sticky;top:12px}.panel h2,.card h2{font-size:17px;margin:0 0 14px}
+.control{margin:15px 0}.control label{display:flex;justify-content:space-between;gap:10px;font-weight:650;font-size:13px;margin-bottom:6px}.value{color:#1d689e;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--blue)}select,input[type=number]{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--ink);font:inherit}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.small{font-size:12px;color:var(--muted)}
+.checks{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0}.checks label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
+button{border:0;background:#1f6f9f;color:#fff;padding:10px 14px;border-radius:9px;font-weight:650;cursor:pointer}button.secondary{background:#e9eff5;color:#24384e}button:hover{filter:brightness(.96)}
+.content{display:grid;gap:16px}.card{padding:18px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#f5f8fb;border:1px solid var(--line);padding:12px;border-radius:10px}.metric span{display:block;color:var(--muted);font-size:12px}.metric strong{display:block;font-size:21px;margin-top:4px;font-variant-numeric:tabular-nums}
+.status{padding:10px 12px;border-radius:9px;background:#e8f5ef;color:#126847;font-weight:650;font-size:13px}.status.warn{background:#fff3df;color:#89570d}.status.bad{background:#fdebed;color:#a52f3b}
+svg{width:100%;height:auto;display:block}.chart-wrap{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff}.legend{display:flex;gap:15px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:7px 2px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.binary{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0}.bit{min-width:27px;text-align:center;padding:7px 5px;border-radius:6px;background:#e8edf3;font-weight:750}.bit.one{background:#176b4b;color:white}
+.data{display:grid;grid-template-columns:1fr auto;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.data:last-child{border:0}.data b{font-variant-numeric:tabular-nums}
+.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}.table th{color:var(--muted);font-weight:600}
+.sample-select{width:100%;accent-color:var(--orange)}
+footer{max-width:1200px;margin:0 auto;padding:0 16px 30px;color:var(--muted);font-size:12px}
+@media(max-width:850px){main{grid-template-columns:1fr}.panel{position:static}.metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.two{grid-template-columns:1fr}.card{padding:13px}.metrics strong{font-size:18px}}
+
+.process-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}
+.process-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:stretch}
+.process-stage{border:1px solid var(--line);border-radius:11px;padding:12px 9px;text-align:center;background:#f8fafc;position:relative;min-width:0}
+.process-stage:not(:last-child):after{content:"›";position:absolute;right:-12px;top:40%;font-size:24px;font-weight:800;color:#91a4b8;z-index:2}
+.stage-icon{height:58px;display:flex;align-items:center;justify-content:center;margin-bottom:5px;color:#1f6f9f}
+.stage-icon svg{width:56px;height:48px}
+.process-stage strong{display:block;font-size:13px}
+.process-stage small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.stage-value{display:block;margin-top:8px;padding:6px 4px;background:#eaf2f8;border-radius:7px;font-size:12px;font-weight:750;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.process-stage.active{border-color:#2585c4;box-shadow:0 0 0 2px #2585c41c;background:#f2f9fd}
+.flow-anim{height:34px;margin:12px 0 4px;position:relative;overflow:hidden;background:linear-gradient(90deg,transparent,#e8eef4,transparent);border-radius:20px}
+.flow-anim:before{content:"";position:absolute;left:-12%;top:16px;width:124%;height:2px;background:#b9c8d6}
+.flow-pulse{position:absolute;top:8px;left:-20px;width:18px;height:18px;border-radius:50%;background:#2585c4;box-shadow:0 0 0 5px #2585c426;animation:flowmove 3.2s linear infinite}
+@keyframes flowmove{from{left:-20px}to{left:calc(100% + 2px)}}
+.process-live{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
+.process-live div{background:#f5f8fb;border:1px solid var(--line);padding:9px;border-radius:9px}
+.process-live span{display:block;font-size:11px;color:var(--muted)}
+.process-live b{display:block;font-size:16px;margin-top:3px;font-variant-numeric:tabular-nums}
+.process-note{font-size:12px;color:var(--muted);margin:10px 0 0}
+@media(max-width:650px){.process-flow{grid-template-columns:repeat(2,1fr)}.process-stage:nth-child(2):after{display:none}.process-live{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+<header>
+  <h1>Laboratoire CAN — Conversion analogique / numérique</h1>
+  <p>STI2D · Spécialité SIN · Acquisition, échantillonnage, quantification et codage</p>
+</header>
+<main>
+<aside class="panel">
+  <h2>Paramètres du système</h2>
+  <div class="control"><label for="bits">Résolution <span class="value" id="bitsVal">8 bits</span></label>
+    <select id="bits"><option>2</option><option>3</option><option>4</option><option>6</option><option selected>8</option><option>10</option><option>12</option><option>16</option></select>
+  </div>
+  <div class="control"><label for="vref">Tension de référence Vref <span class="value" id="vrefVal">5,00 V</span></label>
+    <select id="vref"><option value="3.3">3,3 V</option><option value="5" selected>5,0 V</option><option value="10">10,0 V</option></select>
+  </div>
+  <hr style="border:0;border-top:1px solid var(--line)">
+  <h2>Signal analogique</h2>
+  <div class="control"><label for="freq">Fréquence du signal <span class="value" id="freqVal">5 Hz</span></label><input id="freq" type="range" min="1" max="20" step=".5" value="5"></div>
+  <div class="control"><label for="amp">Amplitude <span class="value" id="ampVal">1,5 V</span></label><input id="amp" type="range" min=".1" max="2.5" step=".1" value="1.5"></div>
+  <div class="control"><label for="offset">Offset <span class="value" id="offsetVal">2,5 V</span></label><input id="offset" type="range" min="0" max="5" step=".1" value="2.5"></div>
+  <hr style="border:0;border-top:1px solid var(--line)">
+  <h2>Acquisition</h2>
+  <div class="control"><label for="fe">Fréquence d'échantillonnage Fe <span class="value" id="feVal">30 Hz</span></label><input id="fe" type="range" min="2" max="200" step="1" value="30"></div>
+  <div class="control"><label for="mode">Méthode de quantification</label><select id="mode"><option value="floor">Troncature</option><option value="round">Arrondi au plus proche</option></select></div>
+  <div class="control"><label for="vin">Tension d'entrée instantanée <span class="value" id="vinVal">2,73 V</span></label><input id="vin" type="range" min="0" max="5" step=".01" value="2.73"></div>
+  <div class="checks">
+    <label><input type="checkbox" id="showAnalog" checked> Analogique</label>
+    <label><input type="checkbox" id="showSamples" checked> Échantillons</label>
+    <label><input type="checkbox" id="showQuant" checked> Quantifié</label>
+    <label><input type="checkbox" id="showError" checked> Erreur</label>
+  </div>
+  <button id="reset" class="secondary" style="width:100%">Réinitialiser les paramètres</button>
+</aside>
+
+<section class="content">
+  <div class="metrics">
+    <div class="metric"><span>Nombre de niveaux</span><strong id="levels">256</strong></div>
+    <div class="metric"><span>Quantum q (LSB)</span><strong id="quantum">19,53 mV</strong></div>
+    <div class="metric"><span>Période signal</span><strong id="period">200 ms</strong></div>
+    <div class="metric"><span>Période échantillonnage</span><strong id="samplingPeriod">33,3 ms</strong></div>
+  </div>
+
+
+  <article class="process-card">
+    <h2>Chaîne de conversion du CAN — animation en temps réel</h2>
+    <p class="small">Le signal analogique est prélevé, mémorisé, quantifié puis codé en binaire. Les valeurs ci-dessous suivent les réglages du simulateur.</p>
+    <div class="process-flow">
+      <div class="process-stage active" id="stageSensor">
+        <div class="stage-icon">
+          <svg viewBox="0 0 64 48" aria-hidden="true"><path d="M3 25 C10 2 17 2 24 25 S38 48 45 25 S57 2 62 25" fill="none" stroke="#2585c4" stroke-width="3" stroke-linecap="round"/><path d="M3 42H62" stroke="#9aabba" stroke-width="1.5"/></svg>
+        </div>
+        <strong>1. Signal analogique</strong><small>Capteur / tension d'entrée</small>
+        <span class="stage-value" id="flowAnalog">2,73 V</span>
+      </div>
+      <div class="process-stage" id="stageSample">
+        <div class="stage-icon">
+          <svg viewBox="0 0 64 48" aria-hidden="true"><path d="M5 37H59M12 37V12H51V37" fill="none" stroke="#e39a32" stroke-width="2.5"/><path d="M12 12L51 12" stroke="#e39a32" stroke-width="4"/><path d="M31 4V43" stroke="#9aabba" stroke-dasharray="3 3"/></svg>
+        </div>
+        <strong>2. Échantillonneur-bloqueur</strong><small>Prélèvement à chaque période Te</small>
+        <span class="stage-value" id="flowSample">Te = 33,3 ms</span>
+      </div>
+      <div class="process-stage" id="stageQuant">
+        <div class="stage-icon">
+          <svg viewBox="0 0 64 48" aria-hidden="true"><path d="M4 39H18V29H30V19H42V9H60" fill="none" stroke="#159568" stroke-width="3" stroke-linejoin="round"/><path d="M4 43H60" stroke="#9aabba"/></svg>
+        </div>
+        <strong>3. Quantificateur</strong><small>Association à un niveau discret</small>
+        <span class="stage-value" id="flowQuant">2,715 V</span>
+      </div>
+      <div class="process-stage" id="stageCode">
+        <div class="stage-icon">
+          <svg viewBox="0 0 64 48" aria-hidden="true"><g fill="#176b4b"><rect x="5" y="7" width="9" height="34" rx="2"/><rect x="19" y="7" width="9" height="34" rx="2"/><rect x="33" y="7" width="9" height="34" rx="2"/><rect x="47" y="7" width="9" height="34" rx="2"/></g><g fill="white" font-size="10" font-weight="bold"><text x="9.5" y="28" text-anchor="middle">1</text><text x="23.5" y="28" text-anchor="middle">0</text><text x="37.5" y="28" text-anchor="middle">1</text><text x="51.5" y="28" text-anchor="middle">0</text></g></svg>
+        </div>
+        <strong>4. Codeur binaire</strong><small>Mot numérique sur N bits</small>
+        <span class="stage-value" id="flowBinary">10001011</span>
+      </div>
+    </div>
+    <div class="flow-anim"><span class="flow-pulse"></span></div>
+    <div class="process-live">
+      <div><span>Valeur prélevée</span><b id="liveSample">2,730 V</b></div>
+      <div><span>Code décimal</span><b id="liveDecimal">139</b></div>
+      <div><span>Mot binaire</span><b id="liveBinary">10001011</b></div>
+    </div>
+    <p class="process-note" id="flowExplanation">La tension est convertie en une valeur numérique selon la résolution et la référence sélectionnées.</p>
+  </article>
+
+  <article class="card">
+    <h2>1. Visualisation du signal et de sa conversion</h2>
+    <div class="legend">
+      <span><i class="dot" style="background:#2585c4"></i>Signal analogique</span>
+      <span><i class="dot" style="background:#e39a32"></i>Échantillons</span>
+      <span><i class="dot" style="background:#159568"></i>Signal quantifié (maintien)</span>
+    </div>
+    <div class="chart-wrap"><svg id="signalChart" viewBox="0 0 760 330" role="img" aria-label="Graphique du signal analogique et de sa conversion"></svg></div>
+    <p class="small">Le signal analogique est continu. Le CAN prélève sa valeur à intervalles réguliers, puis associe chaque mesure à un niveau numérique.</p>
+  </article>
+
+  <article class="card">
+    <h2>2. Échantillonnage et critère de Nyquist-Shannon</h2>
+    <div class="two">
+      <div><div class="metric"><span>Fréquence minimale théorique (2 × Fsignal)</span><strong id="nyquistLimit">10 Hz</strong></div>
+        <div style="height:9px"></div><div class="metric"><span>Rapport Fe / (2 × Fsignal)</span><strong id="nyquistRatio">3,00</strong></div></div>
+      <div id="nyquistStatus" class="status">Critère respecté</div>
+    </div>
+    <p class="small" style="margin-bottom:0">Pour éviter le repliement spectral, Fe doit être strictement supérieure à deux fois la fréquence maximale contenue dans le signal. En pratique, on prévoit une marge et un filtre anti-repliement.</p>
+  </article>
+
+  <article class="card">
+    <h2>3. Erreur de quantification</h2>
+    <div class="chart-wrap"><svg id="errorChart" viewBox="0 0 760 210" role="img" aria-label="Graphique de l'erreur de quantification"></svg></div>
+    <div class="two" style="margin-top:12px">
+      <div class="metric"><span>Erreur RMS sur les échantillons</span><strong id="rms">—</strong></div>
+      <div class="metric"><span>Erreur maximale théorique</span><strong id="maxError">—</strong></div>
+    </div>
+    <p class="small">Avec la troncature, l'erreur de quantification est comprise entre 0 et un quantum (hors saturation). Avec l'arrondi au plus proche, elle est théoriquement comprise entre −q/2 et +q/2.</p>
+  </article>
+
+  <article class="card">
+    <h2>4. Décodage d'un échantillon</h2>
+    <label for="sampleIndex" style="font-size:13px;font-weight:650">Choisir l'échantillon à examiner : <span class="value" id="sampleNumber">1</span></label>
+    <input class="sample-select" id="sampleIndex" type="range" min="0" max="11" value="0">
+    <div class="two" style="margin-top:12px">
+      <div class="metric"><span>Instant de prélèvement</span><strong id="sampleTime">0 ms</strong></div>
+      <div class="metric"><span>Tension analogique prélevée</span><strong id="sampleVoltage">2,50 V</strong></div>
+      <div class="metric"><span>Valeur quantifiée</span><strong id="sampleQuantized">2,48 V</strong></div>
+      <div class="metric"><span>Valeur décimale</span><strong id="sampleDecimal">127</strong></div>
+    </div>
+    <div style="margin-top:14px;font-size:13px;font-weight:650">Mot binaire transmis</div>
+    <div class="binary" id="binary"></div>
+    <div class="data"><span>Poids du bit de poids fort (MSB)</span><b id="msb">128</b></div>
+    <div class="data"><span>Erreur sur cet échantillon</span><b id="sampleError">0 V</b></div>
+    <div class="data"><span>Intervalle du niveau quantifié</span><b id="sampleInterval">—</b></div>
+  </article>
+
+  <article class="card">
+    <h2>5. Influence du nombre de bits</h2>
+    <table class="table"><thead><tr><th>Résolution</th><th>Niveaux</th><th>Quantum</th><th>Erreur max troncature</th></tr></thead><tbody id="comparison"></tbody></table>
+    <p class="small">À plage de tension constante, doubler le nombre de niveaux divise le quantum par deux. Ajouter un bit double le nombre de niveaux et divise le quantum par deux.</p>
+  </article>
+  <article class="card">
+    <h2>6. Repères à retenir</h2>
+    <div class="data"><span>Nombre de niveaux</span><b>2<sup>N</sup></b></div>
+    <div class="data"><span>Quantum pour un CAN unipolaire</span><b>q = Vref / 2<sup>N</sup></b></div>
+    <div class="data"><span>Code en troncature</span><b>⌊Ventree / q⌋</b></div>
+    <div class="data"><span>Débit binaire théorique</span><b id="bitrate">—</b></div>
+    <p class="small">Le débit binaire théorique d'un CAN transmettant chaque conversion sur N bits est Fe × N. Il ne tient pas compte des bits de synchronisation, du protocole ou des temps morts.</p>
+  </article>
+</section>
+</main>
+<footer>Modèle pédagogique idéal — les caractéristiques réelles d'un CAN dépendent de son architecture, de sa référence, de son temps d'acquisition, du bruit et de ses erreurs de linéarité.</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=(v,d=3)=>Number(v).toLocaleString('fr-FR',{maximumFractionDigits:d});
+const state=()=>({N:+$('bits').value,Vref:+$('vref').value,f:+$('freq').value,A:+$('amp').value,off:+$('offset').value,Fe:+$('fe').value,mode:$('mode').value,Vin:+$('vin').value});
+function signal(t,s){return s.off+s.A*Math.sin(2*Math.PI*s.f*t)}
+function clamp(v,s){return Math.max(0,Math.min(s.Vref,v))}
+function code(v,s){let q=s.Vref/(2**s.N),r=clamp(v,s)/q;return Math.max(0,Math.min(2**s.N-1,s.mode==='round'?Math.floor(r+.5):Math.floor(r)))}
+function quant(v,s){return code(v,s)*s.Vref/(2**s.N)}
+function svgPath(points,key){return points.map((p,i)=>(i?'L':'M')+p.x.toFixed(2)+','+p[key].toFixed(2)).join(' ')}
+function draw(){
+ const s=state(),L=2**s.N,q=s.Vref/L,T=1/s.f,duration=2*T;
+ const count=Math.max(2,Math.min(300,Math.round(duration*s.Fe)));
+ const W=760,H=330,left=52,right=18,top=18,bottom=42,pw=W-left-right,ph=H-top-bottom;
+ const X=t=>left+pw*t/duration,Y=v=>top+ph*(1-clamp(v,s)/s.Vref);
+ const samples=Array.from({length:count+1},(_,i)=>{let t=i/s.Fe,v=signal(t,s),c=code(v,s),vq=quant(v,s);return {t,v,c,vq,e:v-vq}});
+ const analog=Array.from({length:401},(_,i)=>{let t=duration*i/400;return {x:X(t),y:Y(signal(t,s))}});
+ let html='';
+ for(let i=0;i<=5;i++){let v=s.Vref*i/5,y=Y(v);html+=`<line x1="${left}" y1="${y}" x2="${W-right}" y2="${y}" stroke="#dbe3ee" stroke-dasharray="4 4"/><text x="${left-9}" y="${y+4}" text-anchor="end" font-size="11" fill="#64748b">${fmt(v,1)}</text>`}
+ for(let i=0;i<=4;i++){let t=duration*i/4,x=X(t);html+=`<line x1="${x}" y1="${top}" x2="${x}" y2="${H-bottom}" stroke="#edf1f5"/><text x="${x}" y="${H-17}" text-anchor="middle" font-size="11" fill="#64748b">${fmt(t*1000,0)}</text>`}
+ html+=`<line x1="${left}" y1="${top}" x2="${left}" y2="${H-bottom}" stroke="#64748b"/><line x1="${left}" y1="${H-bottom}" x2="${W-right}" y2="${H-bottom}" stroke="#64748b"/>`;
+ if($('showAnalog').checked)html+=`<path d="${svgPath(analog,'y')}" transform="translate(0 0)" fill="none" stroke="#2585c4" stroke-width="2.6"/>`.replace(/M([\d.]+),([\d.]+)/,'M$1,$2');
+ if($('showQuant').checked){
+  let d='';samples.forEach((p,i)=>{if(i===0)d+=`M${X(p.t)},${Y(p.vq)}`;else d+=` L${X(p.t)},${Y(samples[i-1].vq)} L${X(p.t)},${Y(p.vq)}`});
+  d+=` L${X(duration)},${Y(samples[samples.length-1].vq)}`;
+  html+=`<path d="${d}" fill="none" stroke="#159568" stroke-width="2.2"/>`;
+ }
+ if($('showSamples').checked)samples.slice(0,-1).forEach(p=>{html+=`<line x1="${X(p.t)}" y1="${top}" x2="${X(p.t)}" y2="${H-bottom}" stroke="#e39a32" opacity=".17" stroke-dasharray="3 4"/><circle cx="${X(p.t)}" cy="${Y(p.v)}" r="4" fill="#e39a32" stroke="white" stroke-width="1"/>`});
+ $('signalChart').innerHTML=html;
+ // Error plot, centered and scaled for the actual error values
+ const errors=samples.slice(0,-1),maxAbs=Math.max(q,s.mode==='round'?q/2:q);
+ const ey=e=>105-72*e/maxAbs, ex=t=>left+pw*t/duration;
+ let ehtml=`<line x1="${left}" y1="${ey(0)}" x2="${W-right}" y2="${ey(0)}" stroke="#64748b" stroke-dasharray="4 4"/><line x1="${left}" y1="12" x2="${left}" y2="145" stroke="#64748b"/>`;
+ ehtml+=`<text x="${left-8}" y="${ey(maxAbs)+4}" text-anchor="end" font-size="10" fill="#64748b">+${fmt(maxAbs,3)}</text><text x="${left-8}" y="${ey(0)+4}" text-anchor="end" font-size="10" fill="#64748b">0</text><text x="${left-8}" y="${ey(-maxAbs)+4}" text-anchor="end" font-size="10" fill="#64748b">-${fmt(maxAbs,3)}</text>`;
+ if($('showError').checked){let d=errors.map((p,i)=>(i?'L':'M')+ex(p.t)+','+ey(p.e)).join(' ');ehtml+=`<path d="${d}" fill="none" stroke="#d18b35" stroke-width="2.2"/>`;errors.forEach(p=>ehtml+=`<circle cx="${ex(p.t)}" cy="${ey(p.e)}" r="2.8" fill="#d18b35"/>`)}
+ $('errorChart').innerHTML=ehtml;
+ // Metrics
+ $('bitsVal').textContent=s.N+' bits';$('vrefVal').textContent=fmt(s.Vref,2)+' V';$('freqVal').textContent=fmt(s.f,1)+' Hz';$('ampVal').textContent=fmt(s.A,1)+' V';$('offsetVal').textContent=fmt(s.off,1)+' V';$('feVal').textContent=s.Fe+' Hz';$('vinVal').textContent=fmt(s.Vin,2)+' V';
+ $('levels').textContent=L.toLocaleString('fr-FR');$('quantum').textContent=fmt(q*1000,2)+' mV';$('period').textContent=fmt(T*1000,1)+' ms';$('samplingPeriod').textContent=fmt(1000/s.Fe,1)+' ms';
+ let ratio=s.Fe/(2*s.f);$('nyquistLimit').textContent=fmt(2*s.f,1)+' Hz';$('nyquistRatio').textContent=fmt(ratio,2);
+ let status=$('nyquistStatus');status.className='status '+(ratio<1?'bad':ratio<2?'warn':'');status.textContent=ratio<1?'Sous-échantillonnage : risque important d’aliasing.':ratio<2?'Critère théorique atteint, mais marge faible.':'Fréquence d’échantillonnage supérieure au minimum théorique.';
+ const rms=Math.sqrt(errors.reduce((a,p)=>a+p.e*p.e,0)/Math.max(1,errors.length));$('rms').textContent=fmt(rms*1000,3)+' mV';$('maxError').textContent=fmt((s.mode==='round'?q/2:q)*1000,3)+' mV';
+ $('bitrate').textContent=(s.Fe*s.N).toLocaleString('fr-FR')+' bit/s';
+ // Illustration fonctionnelle animée : valeurs synchronisées avec les paramètres.
+ const instantCode=code(s.Vin,s), instantQuant=quant(s.Vin,s), instantBinary=instantCode.toString(2).padStart(s.N,'0');
+ $('flowAnalog').textContent=fmt(s.Vin,3)+' V';
+ $('flowSample').textContent='Te = '+fmt(1000/s.Fe,2)+' ms';
+ $('flowQuant').textContent=fmt(instantQuant,4)+' V';
+ $('flowBinary').textContent=instantBinary;
+ $('liveSample').textContent=fmt(s.Vin,3)+' V';
+ $('liveDecimal').textContent=instantCode.toLocaleString('fr-FR');
+ $('liveBinary').textContent=instantBinary;
+ $('flowExplanation').textContent=`Avec ${s.N} bits et Vref = ${fmt(s.Vref,2)} V, le quantum vaut ${fmt(q*1000,3)} mV. La tension ${fmt(s.Vin,3)} V est associée au code ${instantCode} (${instantBinary}).`;
+ ['stageSensor','stageSample','stageQuant','stageCode'].forEach((id,i)=>{const el=$(id);el.classList.toggle('active',true);});
+
+ // Sample inspector
+ let maxIndex=Math.max(0,samples.length-2),idx=Math.min(+$('sampleIndex').value,maxIndex);$('sampleIndex').max=maxIndex;$('sampleIndex').value=idx;
+ let p=samples[idx],bin=p.c.toString(2).padStart(s.N,'0');
+ $('sampleNumber').textContent=(idx+1)+' / '+(samples.length-1);$('sampleTime').textContent=fmt(p.t*1000,2)+' ms';$('sampleVoltage').textContent=fmt(p.v,4)+' V';$('sampleQuantized').textContent=fmt(p.vq,4)+' V';$('sampleDecimal').textContent=p.c;$('msb').textContent=2**(s.N-1);$('sampleError').textContent=fmt(p.e*1000,3)+' mV';
+ $('sampleInterval').textContent=fmt(p.vq,4)+' à '+fmt(Math.min(s.Vref,p.vq+q),4)+' V';
+ $('binary').innerHTML=bin.split('').map((b,i)=>`<span class="bit ${b==='1'?'one':''}" title="bit ${s.N-i-1}">${b}<small style="display:block;font-size:9px;opacity:.7">${s.N-i-1}</small></span>`).join('');
+ $('comparison').innerHTML=[4,8,10,12,16].map(n=>`<tr><td>${n} bits</td><td>${(2**n).toLocaleString('fr-FR')}</td><td>${fmt(s.Vref/(2**n)*1000,4)} mV</td><td>${fmt(s.Vref/(2**n)*1000,4)} mV</td></tr>`).join('');
+}
+document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>{if(el.id==='vref')$('vin').max=el.value;draw()}));
+$('reset').addEventListener('click',()=>{Object.entries({bits:8,vref:5,freq:5,amp:1.5,offset:2.5,fe:30,mode:'floor',vin:2.73,sampleIndex:0}).forEach(([k,v])=>$(k).value=v);['showAnalog','showSamples','showQuant','showError'].forEach(k=>$(k).checked=true);draw()});
+draw();
+</script>
+</body>
+</html>

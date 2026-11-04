@@ -1,47 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Plateforme personnelle de simulations et de ressources pédagogiques pour le BTS Métiers de l’Eau.">
-<title>Simulateur pédagogique – BTS Métiers de l’Eau</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Laboratoire pédagogique numérique : simulateurs interactifs pour le BTS Métiers de l’Eau et la STI2D SIN.">
+<title>Laboratoire pédagogique numérique</title>
 <style>
-:root{--bg:#081522;--bg2:#0d2031;--panel:#10283b;--panel2:#14334a;--ink:#edf6fb;--muted:#a9bdca;--line:#29485d;--cyan:#56c5d0;--mint:#79d9b5;--blue:#63a9e8;--gold:#e9bd72}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;position:relative;isolation:isolate;overflow-x:hidden;background:
-      radial-gradient(ellipse at 12% 4%,rgba(34,128,153,.30) 0,transparent 34%),
-      radial-gradient(ellipse at 88% 38%,rgba(22,100,139,.22) 0,transparent 38%),
-      linear-gradient(160deg,#071724 0%,#0b2638 52%,#081925 100%);
-      color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;min-height:100vh}
-body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.20;
-  background-image:
-    radial-gradient(ellipse at 50% 100%,transparent 0 42%,rgba(91,190,204,.22) 42.2% 42.6%,transparent 42.8%),
-    radial-gradient(ellipse at 50% 100%,transparent 0 54%,rgba(91,190,204,.15) 54.2% 54.5%,transparent 54.8%),
-    radial-gradient(ellipse at 50% 100%,transparent 0 66%,rgba(91,190,204,.10) 66.2% 66.5%,transparent 66.8%);
-  background-size:100% 580px;background-position:center bottom;background-repeat:no-repeat}
-body:after{content:"";position:absolute;z-index:-1;pointer-events:none;left:-8%;right:-8%;top:350px;height:250px;opacity:.22;
-  background:repeating-radial-gradient(ellipse at 50% 100%,transparent 0 34px,rgba(72,177,194,.16) 35px 37px,transparent 38px 68px);
-  filter:blur(1px);mask-image:linear-gradient(to bottom,transparent,black 35%,transparent)}a{color:inherit;text-decoration:none}.wrap{width:min(1080px,calc(100% - 36px));margin:auto}
-header{padding:21px 0 15px;border-bottom:1px solid #29485d88}.top{display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{display:flex;align-items:center;gap:12px;font-weight:750;letter-spacing:.2px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(140deg,var(--cyan),var(--mint));display:grid;place-items:center;color:#092032;font-size:21px;font-weight:900}nav{display:flex;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:13px}nav a:hover{color:var(--cyan)}
-.hero{padding:58px 0 32px;max-width:820px}.eyebrow{color:var(--mint);font-size:12px;text-transform:uppercase;letter-spacing:2px;font-weight:800}h1{font-size:clamp(35px,6vw,59px);line-height:1.04;letter-spacing:-1.8px;margin:12px 0 17px}.hero p{font-size:17px;color:var(--muted);max-width:720px;margin:0}.hero-tags{display:flex;gap:9px;flex-wrap:wrap;margin-top:23px}.tag{border:1px solid var(--line);background:#10283b99;border-radius:99px;padding:7px 12px;color:#c7dbe5;font-size:12px}
-.section-head{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:26px 0 15px}.section-head h2{font-size:23px;margin:0;letter-spacing:-.4px}.section-head p{margin:0;color:var(--muted);font-size:13px}.domains{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.card{background:linear-gradient(145deg,#10283beF,#0d2031);border:1px solid var(--line);border-radius:17px;padding:21px;min-height:210px;display:flex;flex-direction:column;box-shadow:0 12px 35px #0002}.icon{width:43px;height:43px;border-radius:13px;background:#173b50;color:var(--cyan);display:grid;place-items:center;font-size:22px;margin-bottom:15px}.card h3{font-size:18px;margin:0 0 7px}.card p{color:var(--muted);font-size:13px;margin:0 0 17px}.action{margin-top:auto;display:inline-flex;align-items:center;gap:8px;color:var(--mint);font-size:13px;font-weight:700}.status{margin-top:auto;display:inline-flex;align-self:flex-start;border:1px solid #526779;border-radius:99px;padding:5px 10px;color:#c0ccd4;font-size:11px}.tool-links{display:grid;gap:8px;margin-top:auto}.tool-links a{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 11px;border:1px solid #31566b;border-radius:9px;background:#143247;color:#d8edf5;font-size:12px;font-weight:650;transition:background .18s,border-color .18s}.tool-links a:hover{background:#19445a;border-color:var(--cyan)}.tool-links a span{color:var(--mint);white-space:nowrap}.card:has(.tool-links){min-height:250px}.resources{margin:25px 0 35px;padding:22px;border:1px solid var(--line);border-radius:17px;background:#10283bc9;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}.resources h2{margin:0 0 6px;font-size:20px}.resources p{margin:0;color:var(--muted);font-size:13px;max-width:700px}.resource-pill{display:inline-flex;align-items:center;gap:8px;border:1px solid #3b6378;border-radius:10px;padding:11px 14px;color:#d8edf5;font-size:13px;background:#16384c}
-footer{border-top:1px solid #29485d88;padding:20px 0 30px;color:#819aa9;font-size:12px}footer strong{color:#c5d7e0}footer p{margin:5px 0}.credits{max-width:850px}.credits small{color:#91a8b6}@media(max-width:760px){.domains{grid-template-columns:1fr}.resources{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}nav{gap:14px}.hero{padding-top:42px}}
-</style>
-</head>
+:root{--bg:#081522;--panel:#10283b;--panel2:#14334a;--ink:#edf6fb;--muted:#a9bdca;--line:#29485d;--cyan:#56c5d0;--mint:#79d9b5;--blue:#63a9e8;--gold:#e9bd72}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 12% 4%,#22809944,transparent 34%),linear-gradient(160deg,#071724,#0b2638 55%,#081925);color:var(--ink);font:15px/1.55 system-ui,Segoe UI,Arial,sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}.wrap{width:min(1160px,calc(100% - 36px));margin:auto}
+header{padding:22px 0;border-bottom:1px solid #29485d88}.brand{display:flex;align-items:center;gap:12px;font-weight:800}.logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(140deg,var(--cyan),var(--mint));display:grid;place-items:center;color:#092032;font-size:21px}
+.hero{padding:54px 0 28px}.eyebrow{color:var(--mint);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:800}h1{font-size:clamp(34px,5vw,56px);line-height:1.06;letter-spacing:-1.5px;margin:12px 0}.hero p{color:var(--muted);font-size:17px;max-width:760px;margin:0}
+.paths{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:18px 0 28px}.path{border:1px solid var(--line);border-radius:17px;padding:22px;background:linear-gradient(145deg,#10283bef,#0d2031);cursor:pointer;text-align:left;color:var(--ink)}.path.active{border-color:var(--cyan);box-shadow:0 0 0 2px #56c5d022}.path .symbol{font-size:30px}.path h2{margin:8px 0 4px;font-size:21px}.path p{margin:0;color:var(--muted);font-size:13px}
+.toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin:25px 0 14px}.toolbar h2{margin:0;font-size:23px}select,input{background:#10283b;color:var(--ink);border:1px solid var(--line);padding:10px 12px;border-radius:9px;font:inherit}.filters{display:flex;gap:8px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.tool{background:linear-gradient(145deg,#10283bef,#0d2031);border:1px solid var(--line);border-radius:14px;padding:17px;display:flex;flex-direction:column;min-height:170px}.tool-meta{color:var(--mint);font-size:11px;text-transform:uppercase;letter-spacing:.7px;font-weight:800}.tool h3{font-size:17px;line-height:1.3;margin:9px 0 17px}.launch{margin-top:auto;color:#9ee6d1;font-size:13px;font-weight:800;display:flex;justify-content:space-between;border-top:1px solid #29485d;padding-top:12px}.empty{color:var(--muted);padding:22px;border:1px dashed var(--line);border-radius:12px;display:none}
+footer{margin-top:36px;border-top:1px solid #29485d88;padding:20px 0 30px;color:#91a8b6;font-size:12px}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.paths,.grid{grid-template-columns:1fr}.hero{padding-top:35px}}
+</style></head>
 <body>
-<header><div class="wrap top"><a class="brand" href="./"><span class="logo">SP</span><span>Simulateur pédagogique</span></a><nav aria-label="Navigation principale"><a href="#domaines">Domaines</a><a href="#ressources">Ressources</a><a href="#apropos">À propos</a></nav></div></header>
+<header><div class="wrap brand"><span class="logo">LP</span><span>Laboratoire pédagogique numérique</span></div></header>
 <main class="wrap">
-<section class="hero"><div class="eyebrow">BTS Métiers de l’Eau</div><h1>Comprendre<br>Simuler<br>Expérimenter</h1><p>Un espace pédagogique personnel pour explorer les phénomènes liés au traitement de l’eau, dimensionner des installations et comprendre le fonctionnement des systèmes techniques grâce à des simulations interactives.</p><div class="hero-tags"><span class="tag">Simulations interactives</span><span class="tag">Démarches de dimensionnement</span><span class="tag">Ressources pédagogiques</span></div></section>
-<section id="domaines"><div class="section-head"><h2>Explorer les domaines</h2><p>Les outils seront ajoutés progressivement.</p></div>
-<div class="domains">
-<article class="card"><div class="icon">↗</div><h3>Hydraulique</h3><p>Débit, relevage des effluents, vis d’Archimède et dimensionnement des installations de pompage.</p><div class="tool-links">
-<a href="bts-metiers-eau/pompage/">Dimensionnement d'une installation de pompage <span>Ouvrir →</span></a>
-<a href="bts-metiers-eau/hydraulique/poste-relevage/">Poste de relevage — cuve et pompes <span>Ouvrir →</span></a>
-<a href="bts-metiers-eau/hydraulique/vis-archimede/">Dimensionnement d'une vis d'Archimède <span>Ouvrir →</span></a>
-</div></article>
-<article class="card"><div class="icon">≋</div><h3>Process et procédés de traitement</h3><p>Visualiser le dégrillage et la séparation des matières en suspension en décantation classique ou lamellaire.</p><div class="tool-links"><a href="bts-metiers-eau/process/degrilleur/">Dégrilleur automatique <span>Ouvrir →</span></a><a href="bts-metiers-eau/process/decantation/">Décantation en bassin rectangulaire <span>Ouvrir →</span></a><a href="bts-metiers-eau/process/decanteur-lamellaire/">Décantation classique et lamellaire <span>Ouvrir →</span></a></div></article>
-<article class="card"><div class="icon">⌁</div><h3>Régulation et asservissement</h3><p>Étudier la commande tout ou rien, l’hystérésis et le réglage d’une boucle PID.</p><div class="tool-links"><a href="bts-metiers-eau/regulation/tor/">Régulation tout ou rien (TOR) <span>Ouvrir →</span></a><a href="bts-metiers-eau/regulation/pid/">Régulation PID <span>Ouvrir →</span></a></div></article>
-</div></section>
-<section id="ressources" class="resources"><div><h2>Ressources pédagogiques</h2><p>Des cours, fiches méthodes et bloc-notes OneNote pourront être associés à chaque domaine. Les documents resteront hébergés dans l’espace documentaire choisi ; la plateforme accueillera simplement les liens de consultation, avec des droits d’accès configurés en lecture seule lorsque c’est possible.</p></div><span class="resource-pill">Cours · fiches · OneNote</span></section>
+<section class="hero"><div class="eyebrow">Comprendre · Simuler · Expérimenter</div><h1>Un laboratoire,<br>deux parcours.</h1><p>Des modèles dynamiques et interactifs pour explorer les phénomènes, comprendre les systèmes techniques et expérimenter en autonomie.</p></section>
+<section class="paths">
+<button class="path active" data-track="BTS Métiers de l’Eau"><div class="symbol">💧</div><h2>BTS Métiers de l’Eau</h2><p>Hydraulique, procédés, régulation, QSE et conception des installations.</p></button>
+<button class="path" data-track="STI2D – SIN"><div class="symbol">⚙️</div><h2>STI2D – SIN</h2><p>Acquisition, traitement, transmission de l’information et réseaux communicants.</p></button>
+</section>
+<div class="toolbar"><h2 id="sectionTitle">Parcours BTS Métiers de l’Eau</h2><div class="filters"><select id="category"><option value="">Toutes les rubriques</option></select><input id="search" type="search" placeholder="Rechercher un simulateur…"></div></div>
+<section class="grid" id="tools">
+
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Hydraulique">
+        <div class="tool-meta">Hydraulique · déjà publié</div><h3>Dimensionnement d’une installation de pompage</h3>
+        <a class="launch" href="bts-metiers-eau/pompage/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Hydraulique">
+        <div class="tool-meta">Hydraulique · déjà publié</div><h3>Poste de relevage — version du dépôt</h3>
+        <a class="launch" href="bts-metiers-eau/hydraulique/poste-relevage/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Hydraulique">
+        <div class="tool-meta">Hydraulique · déjà publié</div><h3>Vis d’Archimède — version du dépôt</h3>
+        <a class="launch" href="bts-metiers-eau/hydraulique/vis-archimede/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Génie des procédés">
+        <div class="tool-meta">Génie des procédés · déjà publié</div><h3>Dégrilleur automatique</h3>
+        <a class="launch" href="bts-metiers-eau/process/degrilleur/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Génie des procédés">
+        <div class="tool-meta">Génie des procédés · déjà publié</div><h3>Décantation en bassin rectangulaire</h3>
+        <a class="launch" href="bts-metiers-eau/process/decantation/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Génie des procédés">
+        <div class="tool-meta">Génie des procédés · déjà publié</div><h3>Décanteur lamellaire</h3>
+        <a class="launch" href="bts-metiers-eau/process/decanteur-lamellaire/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Régulation et asservissement">
+        <div class="tool-meta">Régulation · déjà publié</div><h3>Régulation TOR</h3>
+        <a class="launch" href="bts-metiers-eau/regulation/tor/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Régulation et asservissement">
+        <div class="tool-meta">Régulation · déjà publié</div><h3>Régulation PID</h3>
+        <a class="launch" href="bts-metiers-eau/regulation/pid/">Présenter et lancer <span>↗</span></a>
+      </article>
+
+
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Hydraulique">
+        <div class="tool-meta">Hydraulique</div>
+        <h3>Vis d’Archimède — version V4</h3>
+        <a class="launch" href="bts-metiers-eau/hydraulique/vis-archimede-v4/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Hydraulique">
+        <div class="tool-meta">Hydraulique</div>
+        <h3>Poste de relevage — version V6</h3>
+        <a class="launch" href="bts-metiers-eau/hydraulique/poste-relevage-v6/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Hydraulique">
+        <div class="tool-meta">Hydraulique</div>
+        <h3>Lois de similitude — version V5</h3>
+        <a class="launch" href="bts-metiers-eau/hydraulique/lois-similitude-v5/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Génie des procédés">
+        <div class="tool-meta">Génie des procédés</div>
+        <h3>Dégrilleur — accumulation et raclage cyclique</h3>
+        <a class="launch" href="bts-metiers-eau/process/degrilleur-cycles/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Génie des procédés">
+        <div class="tool-meta">Génie des procédés</div>
+        <h3>Décantation en bassin rectangulaire</h3>
+        <a class="launch" href="bts-metiers-eau/process/decantation-rectangulaire/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Génie des procédés">
+        <div class="tool-meta">Génie des procédés</div>
+        <h3>Décanteur lamellaire — version fournie</h3>
+        <a class="launch" href="bts-metiers-eau/process/decanteur-lamellaire-v2/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Génie des procédés">
+        <div class="tool-meta">Génie des procédés</div>
+        <h3>Dessableur-dégraisseur</h3>
+        <a class="launch" href="bts-metiers-eau/process/dessableur-degraisseur/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Génie des procédés">
+        <div class="tool-meta">Génie des procédés</div>
+        <h3>Centrifugation — déshydratation des boues</h3>
+        <a class="launch" href="bts-metiers-eau/process/centrifugation/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Conception">
+        <div class="tool-meta">Conception</div>
+        <h3>Synoptique interactif de station et plans</h3>
+        <a class="launch" href="bts-metiers-eau/conception/synoptique-station/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Régulation et asservissement">
+        <div class="tool-meta">Régulation et asservissement</div>
+        <h3>Régulation tout ou rien — modèle fourni</h3>
+        <a class="launch" href="bts-metiers-eau/regulation/tor-modele/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="BTS Métiers de l’Eau" data-category="Régulation et asservissement">
+        <div class="tool-meta">Régulation et asservissement</div>
+        <h3>Régulation PID — modèle fourni</h3>
+        <a class="launch" href="bts-metiers-eau/regulation/pid-modele/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="STI2D – SIN" data-category="Acquisition de l’information">
+        <div class="tool-meta">Acquisition de l’information</div>
+        <h3>Convertisseur analogique-numérique (CAN)</h3>
+        <a class="launch" href="sti2d-sin/acquisition/can/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="STI2D – SIN" data-category="Transmission de l’information">
+        <div class="tool-meta">Transmission de l’information</div>
+        <h3>Encapsulation Ethernet interactive</h3>
+        <a class="launch" href="sti2d-sin/transmission/ethernet/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="STI2D – SIN" data-category="Transmission de l’information">
+        <div class="tool-meta">Transmission de l’information</div>
+        <h3>Simulateur et analyseur de trames I²C</h3>
+        <a class="launch" href="sti2d-sin/transmission/i2c/">Présenter et lancer <span>↗</span></a>
+      </article>
+      <article class="tool" data-track="STI2D – SIN" data-category="Réseaux communicants">
+        <div class="tool-meta">Réseaux communicants</div>
+        <h3>Réseaux communicants — simulateur SIN</h3>
+        <a class="launch" href="sti2d-sin/reseaux/reseau-sin/">Présenter et lancer <span>↗</span></a>
+      </article>
+</section><div class="empty" id="empty">Aucun simulateur ne correspond à cette recherche.</div>
 </main>
-<footer><div class="wrap credits" id="apropos"><strong>Simulateur pédagogique</strong><p>Conception pédagogique et direction du projet : Bertrand CHACORNAC.</p><p>Développement réalisé avec l’assistance d’outils d’intelligence artificielle générative. Les choix pédagogiques, les adaptations, les tests et la validation sont réalisés sous la responsabilité du concepteur.</p><small>© 2026 Bertrand CHACORNAC — Projet personnel. Les droits éventuels sur les composants tiers et les contenus générés ou utilisés restent soumis à leurs conditions propres.</small></div></footer>
-</body></html>
+<footer><div class="wrap"><strong>Laboratoire pédagogique numérique</strong><br>Conception pédagogique : Bertrand CHACORNAC · Outils HTML autonomes, exécutés localement dans le navigateur.</div></footer>
+<script>
+const buttons=[...document.querySelectorAll('.path')],cards=[...document.querySelectorAll('.tool')],category=document.getElementById('category'),search=document.getElementById('search');
+let track='BTS Métiers de l’Eau';
+function refresh(){
+ const cats=[...new Set(cards.filter(c=>c.dataset.track===track).map(c=>c.dataset.category))].sort();
+ const old=category.value;category.innerHTML='<option value="">Toutes les rubriques</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join('');category.value=cats.includes(old)?old:'';
+ let shown=0;cards.forEach(c=>{const ok=c.dataset.track===track&&(!category.value||c.dataset.category===category.value)&&c.innerText.toLowerCase().includes(search.value.toLowerCase());c.style.display=ok?'flex':'none';if(ok)shown++});
+ document.getElementById('empty').style.display=shown?'none':'block';
+ document.getElementById('sectionTitle').textContent=track==='BTS Métiers de l’Eau'?'Parcours BTS Métiers de l’Eau':'Parcours STI2D – SIN';
+}
+buttons.forEach(b=>b.addEventListener('click',()=>{track=b.dataset.track;buttons.forEach(x=>x.classList.toggle('active',x===b));category.value='';search.value='';refresh()}));
+category.addEventListener('change',refresh);search.addEventListener('input',refresh);refresh();
+</script></body></html>
